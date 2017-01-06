@@ -1,0 +1,8 @@
+[{
+	"kinect_position": [0.0, 2.700, 0.0],
+	"kinect_rotation": [60.0, -180.0, 0.0],
+	"kinect_bounds_pos": [0.0, 2.081, 0.0],
+	"kinect_bounds_scale": [4.0, 2.0, 4.0],
+	"kinect_threshold": 1000,
+	"kinect_distance": 2.5
+}]
