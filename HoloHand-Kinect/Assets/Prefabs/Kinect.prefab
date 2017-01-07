@@ -304,4 +304,5 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   DepthSourceManager: {fileID: 1000010644469078}
-  boxBoounds: {fileID: 65000013550259886}
+  boxBounds: {fileID: 0}
+  pointBucketDistance: 0.1

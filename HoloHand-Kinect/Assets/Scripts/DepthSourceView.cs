@@ -9,9 +9,11 @@ public class DepthSourceView : MonoBehaviour
     
     public GameObject DepthSourceManager;
     public BoxCollider boxBounds;
-    public List<BoxCollider> buttons;
+    //the distance around the "furthest point" to gather "hand" points from
+    // used in populating FurthestPointBucket.furthestPoints
+    public float pointBucketDistance;
 
-    private List<List<Vector3>> collidingPoints;
+    private List<BoxCollider> buttons = new List<BoxCollider>();
 
     private Mesh _Mesh;
     MeshCollider _Collider;
@@ -25,11 +27,6 @@ public class DepthSourceView : MonoBehaviour
 
     void Start()
     {
-        collidingPoints = new List<List<Vector3>>();
-        for(int i = 0; i < buttons.Count; i++)
-        {
-            collidingPoints.Add(new List<Vector3>());
-        }
     }
 
     public void Init( Vector3 pos, Vector3 rot, float distance, List<Config.Box> buttons )
@@ -119,8 +116,29 @@ public class DepthSourceView : MonoBehaviour
     class FurthestPointBucket
     {
         public Vector3 furthestPoint = Vector3.zero;
+        public List<Vector3> furthestPoints = new List<Vector3>();
         public float maxDistance = float.MinValue;
         public int numPoints = 0;
+    }
+
+    /**
+     * remove Vectors from the list of points which are too far from the target
+     */
+    private void filterPointsAround(List<Vector3> points, Vector3 target)
+    {
+        //move all point in-bounds to beginning of list
+        int nextValid = 0;
+        for(int i = 0; i < points.Count; i++)
+        {
+            if (Vector3.Distance(points[i], target) <= pointBucketDistance)
+            {
+                points[nextValid] = points[i];
+                nextValid++;
+            }
+        }
+        //chop off the end of the list (which either contains duplicates
+        // or points which are too far away
+        points.RemoveRange(nextValid, points.Count - nextValid);
     }
     
     void ShowInBounds( MeshData d)
@@ -128,15 +146,11 @@ public class DepthSourceView : MonoBehaviour
 
         if (d.Vertices != null && d.Triangles != null)
         {
-            //Initialize!
+            //
+            //  Initialize!
             _Mesh.Clear();
-
+            
             List<int> tris = new List<int>();
-
-            //foreach(List<Vector3> collidingPointList in collidingPoints)
-            //{
-            //    collidingPointList.Clear();
-            //}
 
             FurthestPointBucket[] pointBucket = new FurthestPointBucket[buttons.Count];
             for(int i = 0; i < pointBucket.Length; i++)
@@ -144,13 +158,15 @@ public class DepthSourceView : MonoBehaviour
                 pointBucket[i] = new FurthestPointBucket();
             }
 
+            //get the currently active HoloLens position in plan view
             Vector2 HMDposition = Vector2.zero;
             if (KinectRegistration.closestHMD != null)
             {
                 HMDposition = new Vector2(KinectRegistration.closestHMD.position.x, KinectRegistration.closestHMD.position.z);
             }
 
-            //DO IT
+            //
+            //  filter triangles based on a large "presence" bounding box
             for (int i = 0; i < d.Triangles.Length; i += 3)
             {
 
@@ -176,24 +192,30 @@ public class DepthSourceView : MonoBehaviour
                         for (int j = 0; j < buttons.Count; j++)
                         {
                             BoxCollider button = buttons[j];
+                            //if the point is in one of the buttons
                             if (PointInOABB(vL, button))
                             {
+                                //count it
                                 pointBucket[j].numPoints++;
+                                //add all points in the button to the "furthestPoints" list
+                                // we will filter this list later
+                                pointBucket[j].furthestPoints.Add(vL);
 
-                                //relative to currently active HoloLens
+                                //keep tabs on which individual point is furthest (in plan view) from the HoloLens
+                                /**
+                                 * distance in plan view (x,z) relative to currently active HoloLens
+                                 */
                                 float currDistance = Vector2.Distance(HMDposition, new Vector2(vL.x, vL.z));
                                 if (currDistance > pointBucket[j].maxDistance)
                                 {
                                     pointBucket[j].furthestPoint = vL;
                                     pointBucket[j].maxDistance = currDistance;
                                 }
-                                //collidingPoints[j].Add(vL);
                                 break;
                             }
                         }
                     }
                 }
-
             }
 
             //Debug.Log("Tris " + tris.Count +  " " +  d.Triangles.Length + " " + (d.Triangles.Length - tris.Count) );
@@ -236,23 +258,23 @@ public class DepthSourceView : MonoBehaviour
             //Vector3 pos = _Collider.gameObject.transform.localPosition;
             //_Collider.gameObject.transform.localPosition = pos;
 
-            //set reference point based on furthest point
-            bool setPoint = false;
+            //
+            //  Set reference point based the button with the most points in it
+            //first find which button has the most data in it
+            FurthestPointBucket selectedButton = null;
             foreach(FurthestPointBucket button in pointBucket)
             {
-                if (button.numPoints > 10)
+                if (selectedButton == null || selectedButton.numPoints < button.numPoints)
                 {
-                    KinectAvatarLogic.MyAvatar.transform.position = button.furthestPoint;
-                    setPoint = true;
-                    break;
+                    selectedButton = button;
                 }
             }
-            if (!setPoint)
-            {
-                //set the point to the kinect's location for "safe keeping" 
-                //(keep it out of the way, and provides a way to verify kinect alignment)
-                KinectAvatarLogic.MyAvatar.transform.position = transform.position;
+            //now we actually filter what we think are "hand" points based on the furthest point
+            if (selectedButton != null) {
+                filterPointsAround(selectedButton.furthestPoints, selectedButton.furthestPoint);
             }
+            //and pass the "hand" data to the networked avatar
+            KinectAvatarLogic.MyAvatar.PlaceAvatar(selectedButton.furthestPoints, transform.position);
         }
     }
 

@@ -184,6 +184,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ca09845f61dcc6f48bfb3df003aa64df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  robustTracking: 0
+  confidence: 0
+  previousRobustTracking: 0
+  jumpLimit: 0.15
+  minHandPoints: 5
 --- !u!114 &114716543035425072
 MonoBehaviour:
   m_ObjectHideFlags: 1
