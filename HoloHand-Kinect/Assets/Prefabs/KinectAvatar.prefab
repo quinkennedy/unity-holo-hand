@@ -184,7 +184,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ca09845f61dcc6f48bfb3df003aa64df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  KinectExtent: {fileID: 0}
 --- !u!114 &114716543035425072
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -197,14 +196,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_TransformSyncMode: 1
-  m_SendInterval: 0.1
+  m_SendInterval: 0.033333335
   m_SyncRotationAxis: 7
   m_RotationSyncCompression: 0
   m_SyncSpin: 0
   m_MovementTheshold: 0.001
-  m_SnapThreshold: 5
+  m_SnapThreshold: 0.01
   m_InterpolateRotation: 1
-  m_InterpolateMovement: 1
+  m_InterpolateMovement: 0
 --- !u!135 &135916540044421784
 SphereCollider:
   m_ObjectHideFlags: 1

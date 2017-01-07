@@ -8,8 +8,10 @@ public class DepthSourceView : MonoBehaviour
 { 
     
     public GameObject DepthSourceManager;
-    public BoxCollider boxBoounds;
+    public BoxCollider boxBounds;
+    public List<BoxCollider> buttons;
 
+    private List<List<Vector3>> collidingPoints;
 
     private Mesh _Mesh;
     MeshCollider _Collider;
@@ -23,9 +25,14 @@ public class DepthSourceView : MonoBehaviour
 
     void Start()
     {
+        collidingPoints = new List<List<Vector3>>();
+        for(int i = 0; i < buttons.Count; i++)
+        {
+            collidingPoints.Add(new List<Vector3>());
+        }
     }
 
-    public void Init( Vector3 pos, Vector3 rot, float distance )
+    public void Init( Vector3 pos, Vector3 rot, float distance, List<Config.Box> buttons )
     {
         _Mesh = new Mesh();
         _Mesh.name = "DynamicKinectMesh";
@@ -46,6 +53,21 @@ public class DepthSourceView : MonoBehaviour
         transform.position = pos;
         transform.rotation = Quaternion.Euler(rot);
 
+        foreach(Config.Box buttonData in buttons)
+        {
+            createButton(buttonData);
+        }
+    }
+
+    private void createButton(Config.Box buttonData)
+    {
+        GameObject button = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        button.GetComponent<MeshRenderer>().enabled = false;
+        button.transform.SetParent(transform.parent, false);
+        button.transform.localPosition = buttonData.position;
+        button.transform.localScale = buttonData.scale;
+        button.transform.localEulerAngles = buttonData.rotation;
+        buttons.Add(button.GetComponent<BoxCollider>());
     }
     
     public int GetMeshTriangleCount()
@@ -71,41 +93,8 @@ public class DepthSourceView : MonoBehaviour
         MeshData d = _DepthManager.GetData();
         if( d.Triangles != null && d.Vertices != null ) {
             ShowInBounds(d);
-            PositionExtent(d);
         }
 
-    }
-
-    void PositionExtent(MeshData d)
-    {
-        float maxDistance = float.MinValue;
-        Vector3 furthestPoint = Vector3.zero;
-
-        //finding the point furthest (in plan view) from the HoloLens.
-        if (KinectRegistration.closestHMD != null)
-        {
-            Vector2 HMDposition = new Vector2(KinectRegistration.closestHMD.position.x, KinectRegistration.closestHMD.position.z);
-
-            foreach (Vector3 vertex in d.Vertices)
-            {
-                Vector3 vL = transform.TransformPoint(vertex);
-                if (PointInOABB(vL, boxBoounds))
-                {
-                    float currDistance = Vector2.Distance(HMDposition, new Vector2(vL.x, vL.z));
-                    if (currDistance > maxDistance)
-                    {
-                        furthestPoint = vL;
-                        maxDistance = currDistance;
-                    }
-                }
-            }
-        }
-
-        if (Vector3.Distance(KinectAvatarLogic.MyAvatar.transform.position, furthestPoint) > .4)
-        {
-            Debug.Log("moved to " + maxDistance + " away");
-        }
-        KinectAvatarLogic.MyAvatar.transform.position = furthestPoint;
     }
 
     void ShowRaw( MeshData d)
@@ -126,14 +115,42 @@ public class DepthSourceView : MonoBehaviour
         _Collider.gameObject.transform.localPosition = pos;
         
     }
+
+    class FurthestPointBucket
+    {
+        public Vector3 furthestPoint = Vector3.zero;
+        public float maxDistance = float.MinValue;
+        public int numPoints = 0;
+    }
     
     void ShowInBounds( MeshData d)
     {
+
         if (d.Vertices != null && d.Triangles != null)
         {
+            //Initialize!
             _Mesh.Clear();
 
             List<int> tris = new List<int>();
+
+            //foreach(List<Vector3> collidingPointList in collidingPoints)
+            //{
+            //    collidingPointList.Clear();
+            //}
+
+            FurthestPointBucket[] pointBucket = new FurthestPointBucket[buttons.Count];
+            for(int i = 0; i < pointBucket.Length; i++)
+            {
+                pointBucket[i] = new FurthestPointBucket();
+            }
+
+            Vector2 HMDposition = Vector2.zero;
+            if (KinectRegistration.closestHMD != null)
+            {
+                HMDposition = new Vector2(KinectRegistration.closestHMD.position.x, KinectRegistration.closestHMD.position.z);
+            }
+
+            //DO IT
             for (int i = 0; i < d.Triangles.Length; i += 3)
             {
 
@@ -145,11 +162,36 @@ public class DepthSourceView : MonoBehaviour
 
                 Vector3 vL = transform.TransformPoint(A);
 
-                if (PointInOABB(vL, boxBoounds))
+                if (PointInOABB(vL, boxBounds))
                 {
                     tris.Add(d.Triangles[i]);
                     tris.Add(d.Triangles[i + 1]);
                     tris.Add(d.Triangles[i + 2]);
+
+                    //if we have a registered HoloLens,
+                    // find the furthest point in plan view
+                    // that is inside one of the defined buttons
+                    if (KinectRegistration.closestHMD != null)
+                    {
+                        for (int j = 0; j < buttons.Count; j++)
+                        {
+                            BoxCollider button = buttons[j];
+                            if (PointInOABB(vL, button))
+                            {
+                                pointBucket[j].numPoints++;
+
+                                //relative to currently active HoloLens
+                                float currDistance = Vector2.Distance(HMDposition, new Vector2(vL.x, vL.z));
+                                if (currDistance > pointBucket[j].maxDistance)
+                                {
+                                    pointBucket[j].furthestPoint = vL;
+                                    pointBucket[j].maxDistance = currDistance;
+                                }
+                                //collidingPoints[j].Add(vL);
+                                break;
+                            }
+                        }
+                    }
                 }
 
             }
@@ -194,15 +236,31 @@ public class DepthSourceView : MonoBehaviour
             //Vector3 pos = _Collider.gameObject.transform.localPosition;
             //_Collider.gameObject.transform.localPosition = pos;
 
+            //set reference point based on furthest point
+            bool setPoint = false;
+            foreach(FurthestPointBucket button in pointBucket)
+            {
+                if (button.numPoints > 10)
+                {
+                    KinectAvatarLogic.MyAvatar.transform.position = button.furthestPoint;
+                    setPoint = true;
+                    break;
+                }
+            }
+            if (!setPoint)
+            {
+                //set the point to the kinect's location for "safe keeping" 
+                //(keep it out of the way, and provides a way to verify kinect alignment)
+                KinectAvatarLogic.MyAvatar.transform.position = transform.position;
+            }
         }
-
     }
 
     bool PointInOABB(Vector3 point, BoxCollider box)
     {
         //is point in a bounding box
         point = box.transform.InverseTransformPoint(point) - box.center;
-
+        
         float halfX = (box.size.x * 0.5f);
         float halfY = (box.size.y * 0.5f);
         float halfZ = (box.size.z * 0.5f);
@@ -216,9 +274,10 @@ public class DepthSourceView : MonoBehaviour
 
     private void OnCollisionStay(Collision collision)
     {
+        Debug.Log("OnCollisionStay");
         foreach (ContactPoint contact in collision.contacts)
         {
-            print(contact.thisCollider.name + " hit " + contact.otherCollider.name);
+            Debug.Log(contact.thisCollider.name + " hit " + contact.otherCollider.name);
             Debug.DrawRay(contact.point, contact.normal, Color.white);
         }
         

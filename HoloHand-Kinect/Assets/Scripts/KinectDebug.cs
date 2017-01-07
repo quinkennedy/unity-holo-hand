@@ -18,7 +18,7 @@ public class KinectDebug : MonoBehaviour {
     void Awake () {
         configuration = new Config("config.json");
 
-        KinectDepth.Init(configuration.kinect_pos, configuration.kinect_rot, configuration.depthDistance);
+        KinectDepth.Init(configuration.kinect_pos, configuration.kinect_rot, configuration.depthDistance, configuration.buttons);
 
         GameObject kinectBounds = GameObject.Find("Cube_001");
         Vector3 pos = configuration.kinect_bounds_pos;
