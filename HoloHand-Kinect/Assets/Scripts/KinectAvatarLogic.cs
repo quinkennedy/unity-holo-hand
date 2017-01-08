@@ -11,6 +11,7 @@ public class KinectAvatarLogic : NetworkBehaviour {
     public bool previousRobustTracking = false;
     public float jumpLimit;
     public int minHandPoints;
+    public bool enableRotation = true;
 
 	// Use this for initialization
 	void Start () {
@@ -27,9 +28,8 @@ public class KinectAvatarLogic : NetworkBehaviour {
         public Vector3 scale;
     }
 
-    public void PlaceAvatar(List<Vector3> handPoints, Vector3 kinectLocation)
+    public void PlaceAvatar(List<Vector3> handPoints, Transform kinectTransform)
     {
-        Debug.Log("[KinectAvatarLogic:PlaceAvatar] provided " + handPoints.Count + " points");
         //if we don't have very many points, then it is just noise that we should ignore
         robustTracking = (handPoints != null && handPoints.Count >= minHandPoints);
         if (!robustTracking)
@@ -44,7 +44,10 @@ public class KinectAvatarLogic : NetworkBehaviour {
                 //if we have had bad tracking for the last 2 frames...
                 //set the point to the kinect's location for "safe keeping"
                 //(keep it out of the way, and provides a way to verify kinect alignment)
-                transform.position = kinectLocation;
+                transform.position = kinectTransform.position;
+                transform.rotation = kinectTransform.rotation;
+                //rotate so the plane is parallel to the front face of the Kinect
+                transform.rotation *= Quaternion.Euler(90, 0, 0);
                 confidence = 0;
             }
         } else
@@ -64,11 +67,62 @@ public class KinectAvatarLogic : NetworkBehaviour {
             {
                 //if we have good tracking, track the point!
                 transform.position = computedPoint.position;
+                transform.eulerAngles = computedPoint.rotation;
                 confidence = 1;
             }
         }
         
         previousRobustTracking = robustTracking;
+    }
+
+    private Vector3 getCentroid(List<Vector3> points)
+    {
+        Vector3 centroid = new Vector3();
+        //position is a simple average of the points
+        foreach (Vector3 point in points)
+        {
+            centroid += point;
+        }
+        centroid /= points.Count;
+
+        return centroid;
+    }
+
+    private double[,] subtractCentroid(List<Vector3> points, Vector3 centroid)
+    {
+        double[,] translated = new double[3, points.Count];
+
+        for(int i = 0; i < points.Count; i++)
+        {
+            Vector3 tp = points[i] - centroid;
+            translated[0, i] = tp.x;
+            translated[1, i] = tp.y;
+            translated[2, i] = tp.z;
+        }
+
+        return translated;
+    }
+
+    // http://stackoverflow.com/questions/29356594/fitting-a-plane-to-a-set-of-points-using-singular-value-decomposition
+    private Vector3 getBestFitRotation(List<Vector3> points, Vector3 centroid)
+    {
+        double[,] dataMat = subtractCentroid(points, transform.position);
+        double[] w = new double[3];
+        double[,] u = new double[3, 3];
+        double[,] vt = new double[1, 1];
+
+        // arg1: points relative to centroid
+        // arg2: rows in datMat (3 because we are dealing with 3d points)
+        // arg3: columns in datMat
+        // arg4: 1 because we want the "left singular vectors"
+        // arg5: 0 because we don't care about the "right singular vectors"
+        // arg6: 2 because we have extra memory and want maximum performance
+        // arg7-9: references for return data
+        bool a = alglib.svd.rmatrixsvd(dataMat, 3, points.Count, 1, 0, 2, ref w, ref u, ref vt);
+
+        return new Vector3((float)u[0, 0] * 180 / Mathf.PI, 
+                           (float)u[1, 0] * 180 / Mathf.PI, 
+                           (float)u[2, 0] * 180 / Mathf.PI);
     }
 
     /**
@@ -77,19 +131,19 @@ public class KinectAvatarLogic : NetworkBehaviour {
     private sTransform getComputedPoint(List<Vector3> points)
     {
         sTransform transform;
+        //don't worry about adjusting scale
         transform.scale = Vector3.one;
-        transform.position = Vector3.zero;
-        transform.rotation = Vector3.zero;
-
         //position is a simple average of the points
-        foreach(Vector3 point in points)
-        {
-            transform.position += point;
-        }
-        transform.position /= points.Count;
+        transform.position = getCentroid(points);
 
-        //TODO: rotation will be based on a "best fit" plane for all the points
-        // http://stackoverflow.com/questions/29356594/fitting-a-plane-to-a-set-of-points-using-singular-value-decomposition
+        if (enableRotation)
+        {
+            //rotation will be based on a "best fit" plane for all the points
+            transform.rotation = getBestFitRotation(points, transform.position);
+        } else
+        {
+            transform.rotation = Vector3.zero;
+        }
 
         return transform;
     }

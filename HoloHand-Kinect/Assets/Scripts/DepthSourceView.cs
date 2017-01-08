@@ -91,6 +91,12 @@ public class DepthSourceView : MonoBehaviour
         if( d.Triangles != null && d.Vertices != null ) {
             ShowInBounds(d);
         }
+        else
+        {
+            //if the kinect doesn't see anything, 
+            //just fall back to setting the point to the kinect's position
+            KinectAvatarLogic.MyAvatar.PlaceAvatar(null, transform);
+        }
 
     }
 
@@ -274,7 +280,7 @@ public class DepthSourceView : MonoBehaviour
                 filterPointsAround(selectedButton.furthestPoints, selectedButton.furthestPoint);
             }
             //and pass the "hand" data to the networked avatar
-            KinectAvatarLogic.MyAvatar.PlaceAvatar(selectedButton.furthestPoints, transform.position);
+            KinectAvatarLogic.MyAvatar.PlaceAvatar(selectedButton.furthestPoints, transform);
         }
     }
 
