@@ -61,7 +61,7 @@ public class StartLogic : MonoBehaviour {
 
             //if we have already tried connecting to the server once, don't try again.
             //  the user can use the HUD to set the correct IP and attempt connecting again.
-            netMgrHUD.manager.networkAddress = "172.16.0.130";
+            netMgrHUD.manager.networkAddress = "192.168.1.122";
             netMgrHUD.manager.StartClient();
 #endif
         }
