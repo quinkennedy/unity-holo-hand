@@ -19,6 +19,12 @@ public class HololensAvatarLogic : NetworkBehaviour {
     private string ObjectAnchorStoreName = "kinect_anchor";
     private bool Placing = false;
     private static Transform MyCalibration;
+    [SyncVar]
+    public int ReportedFragmentIndex;
+    [SyncVar]
+    public string ID;
+    [SyncVar]
+    public string IP;
 
     // Use this for initialization
     void Start()
@@ -32,6 +38,8 @@ public class HololensAvatarLogic : NetworkBehaviour {
 #if UNITY_WSA_10_0
         if (isLocalPlayer)
         {
+            ID = "D3AD BE47";
+            IP = Network.player.ipAddress;
             MyCalibration = CalibrationPlane;
             HMD = transform.Find("HMD");
 
@@ -48,8 +56,24 @@ public class HololensAvatarLogic : NetworkBehaviour {
             if (keywordManager != null)
             {
                 Debug.Log("[HololensAvatarLogic:Start] updating keyword listeners");
-                keywordManager.KeywordsAndResponses[0].Response.AddListener(this.Reset);
-                keywordManager.KeywordsAndResponses[1].Response.AddListener(this.Place);
+                foreach (KeywordManager.KeywordAndResponse kna in keywordManager.KeywordsAndResponses)
+                {
+                    switch (kna.Keyword.ToLower())
+                    {
+                        case "reset":
+                            kna.Response.AddListener(this.CommandUnlockKinectCalibration);
+                            break;
+                        case "place":
+                            kna.Response.AddListener(this.CommandLockKinectCalibration);
+                            break;
+                        case "and then":
+                            kna.Response.AddListener(this.CommandNext);
+                            break;
+                        case "back":
+                            kna.Response.AddListener(this.CommandPrevious);
+                            break;
+                    }
+                }
             }
             else
             {
@@ -60,6 +84,9 @@ public class HololensAvatarLogic : NetworkBehaviour {
             GameObject wrapper = new GameObject("RemoteLensWrapper");
             transform.SetParent(wrapper.transform);
         }
+#elif UNITY_ANDROID
+        Debug.Log("[HololensAvatarLogic:Start] remote Hololens spawned on Android device");
+        HololensTabWrangler.Instance.RegisterHololens(this);
 #endif
     }
 
@@ -88,7 +115,7 @@ public class HololensAvatarLogic : NetworkBehaviour {
         }
     }
 
-    public void Reset()
+    public void CommandUnlockKinectCalibration()
     {
         Debug.Log("[KinectCalibrationPlane:Reset]");
 
@@ -109,7 +136,7 @@ public class HololensAvatarLogic : NetworkBehaviour {
         Placing = true;
     }
 
-    public void Place()
+    public void CommandLockKinectCalibration()
     {
         Debug.Log("[KinectCalibrationPlane:Place] " + gameObject);
 
@@ -120,6 +147,29 @@ public class HololensAvatarLogic : NetworkBehaviour {
 
             //CalibrationModel.GetComponent<MeshRenderer>().enabled = false;
             Placing = false;
+        }
+    }
+
+    public void CommandNext()
+    {
+        if (ReportedFragmentIndex == 5)
+        {
+            ReportedFragmentIndex = 0;
+        }
+        else
+        {
+            ReportedFragmentIndex++;
+        }
+    }
+
+    public void CommandPrevious()
+    {
+        if (ReportedFragmentIndex == 0)
+        {
+            ReportedFragmentIndex = 5;
+        } else
+        {
+            ReportedFragmentIndex--;
         }
     }
 #endif

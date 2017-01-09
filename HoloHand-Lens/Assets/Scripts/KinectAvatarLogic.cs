@@ -28,7 +28,7 @@ public class KinectAvatarLogic : NetworkBehaviour {
         public Vector3 scale;
     }
 
-#if !UNITY_WSA_10_0
+#if UNITY_STANDALONE
     public void PlaceAvatar(List<Vector3> handPoints, Transform kinectTransform)
     {
         //if we don't have very many points, then it is just noise that we should ignore
