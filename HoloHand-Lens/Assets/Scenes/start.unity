@@ -37,7 +37,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.46169513, g: 0.5124164, b: 0.58993304, a: 1}
+  m_IndirectSpecularColor: {r: 0.44657868, g: 0.49641263, b: 0.57481706, a: 1}
 --- !u!157 &3
 LightmapSettings:
   m_ObjectHideFlags: 0
@@ -232,6 +232,7 @@ MonoBehaviour:
   m_SpawnPrefabs:
   - {fileID: 1669977710138828, guid: 6efafe5337fc7144b8c54af9cc2e9174, type: 2}
   - {fileID: 1809351004467922, guid: 92b7746b44a823644922240d705b62e7, type: 2}
+  - {fileID: 1068428902944096, guid: 4c9e24efce428e145acc61e8614e93b1, type: 2}
   m_CustomConfig: 0
   m_MaxConnections: 4
   m_ConnectionConfig:
@@ -320,6 +321,8 @@ MonoBehaviour:
     type: 2}
   kinectPrefab: {fileID: 1809351004467922, guid: 92b7746b44a823644922240d705b62e7,
     type: 2}
+  mobilePrefab: {fileID: 1068428902944096, guid: 4c9e24efce428e145acc61e8614e93b1,
+    type: 2}
 --- !u!4 &657854122
 Transform:
   m_ObjectHideFlags: 0
@@ -357,7 +360,6 @@ GameObject:
   - component: {fileID: 671918907}
   - component: {fileID: 671918906}
   - component: {fileID: 671918912}
-  - component: {fileID: 671918911}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -433,18 +435,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &671918911
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 671918905}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ac4029be9f5469a4eba2bb322a3a8b5f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  KinectCalibrationPlane: {fileID: 0}
 --- !u!114 &671918912
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -463,8 +453,7 @@ MonoBehaviour:
     Response:
       m_PersistentCalls:
         m_Calls:
-        - m_Target: {fileID: 114049861065419700, guid: 6efafe5337fc7144b8c54af9cc2e9174,
-            type: 2}
+        - m_Target: {fileID: 0}
           m_MethodName: 
           m_Mode: 1
           m_Arguments:
@@ -482,8 +471,43 @@ MonoBehaviour:
     Response:
       m_PersistentCalls:
         m_Calls:
-        - m_Target: {fileID: 114049861065419700, guid: 6efafe5337fc7144b8c54af9cc2e9174,
-            type: 2}
+        - m_Target: {fileID: 0}
+          m_MethodName: 
+          m_Mode: 1
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 2
+      m_TypeName: UnityEngine.Events.UnityEvent, UnityEngine, Version=0.0.0.0, Culture=neutral,
+        PublicKeyToken=null
+  - Keyword: and then
+    KeyCode: 0
+    Response:
+      m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: 0}
+          m_MethodName: 
+          m_Mode: 1
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 2
+      m_TypeName: UnityEngine.Events.UnityEvent, UnityEngine, Version=0.0.0.0, Culture=neutral,
+        PublicKeyToken=null
+  - Keyword: back
+    KeyCode: 0
+    Response:
+      m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: 0}
           m_MethodName: 
           m_Mode: 1
           m_Arguments:
