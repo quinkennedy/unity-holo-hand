@@ -9,6 +9,8 @@ public class DepthSourceView : MonoBehaviour
     
     public GameObject DepthSourceManager;
     public BoxCollider boxBounds;
+    public Material buttonMaterial;
+
     //the distance around the "furthest point" to gather "hand" points from
     // used in populating FurthestPointBucket.furthestPoints
     public float pointBucketDistance;
@@ -59,7 +61,8 @@ public class DepthSourceView : MonoBehaviour
     private void createButton(Config.Box buttonData)
     {
         GameObject button = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        button.GetComponent<MeshRenderer>().enabled = false;
+        button.GetComponent<MeshRenderer>().enabled = true;
+        button.GetComponent<MeshRenderer>().material = buttonMaterial;
         button.transform.SetParent(transform.parent, false);
         button.transform.localPosition = buttonData.position;
         button.transform.localScale = buttonData.scale;

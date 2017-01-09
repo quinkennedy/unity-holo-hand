@@ -22,19 +22,34 @@ public class KinectDebug : MonoBehaviour {
 
         GameObject kinectBounds = GameObject.Find("Cube_001");
         Vector3 pos = configuration.kinect_bounds_pos;
-        //pos.x += 0.04f;
-        //pos.y += 1.0f;
-        //pos.z += (configuration.kinect_bounds_scale.z / 2.0f);
-        //pos.z *= -1;
-
-
+    
         kinectBounds.transform.localScale = configuration.kinect_bounds_scale;
         kinectBounds.transform.localPosition = pos;
         
     }
-    
+
     // Update is called once per frame
-    void Update () {        
-        //Debug.LogFormat("{0},{1},{2}", KinectMic.EnergyAchieved(), KinectMic.MaxEnergyAchieved(), KinectMic.Listening() );
-	}
+
+    void Update()
+    {
+
+        if (Input.GetKey(KeyCode.A))
+        {
+            KinectDepth.DepthSourceManager.GetComponent<DepthSourceManager>().maxZ = 4500;
+
+            GameObject kinectBounds = GameObject.Find("Cube_001");
+            kinectBounds.transform.localScale = Vector3.one * 4.5f;
+        }
+
+        if (Input.GetKey(KeyCode.R))
+        {
+            KinectDepth.DepthSourceManager.GetComponent<DepthSourceManager>().maxZ = configuration.depthDistance * 1000.0f;
+
+            GameObject kinectBounds = GameObject.Find("Cube_001");
+            Vector3 pos = configuration.kinect_bounds_pos;
+            
+            kinectBounds.transform.localScale = configuration.kinect_bounds_scale;
+            kinectBounds.transform.localPosition = pos;
+        }
+    }
 }
