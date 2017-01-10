@@ -1,11 +1,9 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.IO;
-using System;
 using UnityEngine;
 using UnityEngine.Networking;
-using UnityEngine.SceneManagement;
-using UnityEngine.VR;
+using System.IO;
 
 #if UNITY_EDITOR && UNITY_WSA_10_0
 using UnityEditor.Callbacks;
@@ -16,114 +14,51 @@ using UnityEditor;
 using System.Threading.Tasks;
 #endif
 
-
-public class NetworkStartLogic : MonoBehaviour {
-
-    #region Inspector properties
-    
-    public GameObject hololensPrefab = null;
-    public GameObject kinectPrefab = null;
-    public GameObject mobilePrefab = null;
-
-    #endregion
-
-    private bool _triedOnce = false;
-    private bool _needCam = true;
-    private bool _needConfig = false;
+public class HololensNetStart : INetStartLogic
+{
     private bool _saveConfig = false;
     private static string configName = "config.json";
 
-    // Use this for initialization
-    void Start () {
-        Debug.Log("[NetworkStartLogic:Start]");
-#if UNITY_WSA_10_0
-        //If on Hololens
-        Debug.Log("[NetworkStartLogic:Start] running on Hololens");
-        if (hololensPrefab != null){
-            NetworkManager.singleton.playerPrefab = hololensPrefab;
-        }
-        _needConfig = true;
-        LoadConfig(configName, Config.CreateFromUnityStorage());
-#elif UNITY_ANDROID
-        Debug.Log("[NetworkStartLogic:Start] running on Android");
-        NetworkManager.singleton.playerPrefab = mobilePrefab;
-        //The android app doesn't use a camera
-        _needCam = false;
-#else
-        //on PC
-        Debug.Log("[NetworkStartLogic:Start] running on PC");
-        if (kinectPrefab != null)
-        {
-            NetworkManager.singleton.playerPrefab = kinectPrefab;
-        }
-#endif
-    }
-
-    private void OnApplicationPause(bool pauseStatus)
+    public override void LoadConfig()
     {
-        Debug.Log("[NetworkStartLogic:OnApplicationPause] - " + pauseStatus);
-        _triedOnce = false;
+        LoadConfig(configName, HololensConfig.CreateFromUnityStorage());
     }
 
-    // Update is called once per frame
-    void Update ()
+    public override bool ShouldStartNetwork()
     {
-        //if we have a main camera, and no active network,
-        //  then let's start up the network!
-        // - we have to wait for a main camera so the avatar will get placed correctly.
-        if (!_triedOnce &&
-            NetworkManager.singleton != null && 
-            !NetworkManager.singleton.isNetworkActive && 
-            (!_needCam || Camera.main != null) &&
-            (!_needConfig || Config.instance != null))
+        if (_saveConfig)
         {
-            _triedOnce = true;
-            Debug.Log("[NetworkStartLogic:Update] starting up network");
-#if UNITY_STANDALONE
-            //aka if on PC
-            Debug.Log("[NetworkStartLogic:Update] starting network host");
-            NetworkManager.singleton.serverBindToIP = false;
-            NetworkManager.singleton.StartHost();
-#else
-            Debug.Log("[NetworkStartLogic:Update] attempting to connect");
-            //otherwise on a HoloLens or mobile device
-
-            //if we have already tried connecting to the server once, don't try again.
-            //  the user can use the HUD to set the correct IP and attempt connecting again.
-            if (_needConfig)
-            {
-                NetworkManager.singleton.networkAddress = Config.instance.server;
-            }
-            else
-            {
-                NetworkManager.singleton.networkAddress = "172.16.0.130";
-            }
-            NetworkManager.singleton.StartClient();
-#endif
-
-            if (_saveConfig)
-            {
-                Config.instance.SaveToUnityStorage();
-                _saveConfig = false;
-            }
+            HololensConfig.instance.SaveToUnityStorage();
+            _saveConfig = false;
         }
+        return (HololensConfig.instance != null);
     }
+
+    public override void StartNetwork()
+    {
+        NetworkManager.singleton.networkAddress = HololensConfig.instance.server;
+        NetworkManager.singleton.StartClient();
+    }
+
+    /**********************
+     * Config Loading Mess
+     **********************/
 
     void ParseConfig(string json)
     {
-        Config.CreateFromJSON(json);
-        Debug.Log("[NetworkStartLogic:ParseConfig] Config " + Config.instance);
+        HololensConfig.CreateFromJSON(json);
+        Debug.Log("[NetworkStartLogic:ParseConfig] Config " + HololensConfig.instance);
     }
 
 #if UNITY_EDITOR
 
-    public void LoadConfig( string jsonFile, Config storedConfig)
+    public void LoadConfig(string jsonFile, HololensConfig storedConfig)
     {
         string configJson = File.ReadAllText(jsonFile);
         ParseConfig(configJson);
     }
 #if UNITY_WSA_10_0
-/*    [PostProcessBuild]
+    [PostProcessBuild]
     public static void copyConfigToWSAAssets(BuildTarget target, string pathToBuiltProject)
     {
         Debug.Log("[NetworkStartLogic:copyConfigToWSAAssets]");
@@ -131,12 +66,12 @@ public class NetworkStartLogic : MonoBehaviour {
         FileUtil.DeleteFileOrDirectory(destination);
         FileUtil.CopyFileOrDirectory(configName, destination);
     }
-    */
+        
 #endif
 
 #elif UNITY_WSA_10_0
 
-    public async void LoadConfig(string jsonFile, Config storedConfig)
+    public async void LoadConfig(string jsonFile, HololensConfig storedConfig)
     {
         //first choice is load from user-uploaded file
         //second choice is load from Unity storage
@@ -146,10 +81,22 @@ public class NetworkStartLogic : MonoBehaviour {
             if (storedConfig != null)
             {
                 Debug.Log("[NetworkStartLogic:LoadConfig] using config from Unity storage");
-                Config.instance = storedConfig;
+                HololensConfig.instance = storedConfig;
             } else
             {
                 Debug.LogWarning("[NetworkStartLogic:LoadConfig] failed to load any config");
+                HololensConfig.instance = new HololensConfig();
+                HololensConfig.instance.server = "172.16.0.130";
+                HololensConfig.instance.id = "DE4D B3A7";
+                IReadOnlyList<Windows.Networking.HostName> hostNames = Windows.Networking.Connectivity.NetworkInformation.GetHostNames();
+                foreach(Windows.Networking.HostName hostName in hostNames)
+                {
+                    if (hostName.Type == Windows.Networking.HostNameType.DomainName)
+                    {
+                        HololensConfig.instance.id = hostName.RawName;
+                        break;
+                    }
+                }
             }
         } else {
             ParseConfig(json);
@@ -215,5 +162,4 @@ public class NetworkStartLogic : MonoBehaviour {
 
 
 #endif
-
 }

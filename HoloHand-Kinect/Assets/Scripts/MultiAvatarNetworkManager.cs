@@ -39,7 +39,7 @@ public class MultiAvatarNetworkManager : NetworkManager {
             {
                 msg.avatarIndex = i;
 #if UNITY_WSA_10_0
-                msg.avatarName = Config.instance.id;
+                msg.avatarName = HololensConfig.instance.id;
 #endif
                 break;
             }

@@ -1,25 +1,25 @@
 ﻿using UnityEngine;
 
 [System.Serializable]
-public class Config
+public class HololensConfig
 {
     public string server;
     public string id;
 
-    public static Config instance;
+    public static HololensConfig instance;
 
     public override string ToString()
     {
         return "Server: " + server + " ID:" + id;
     }
 
-    public static Config CreateFromJSON(string jsonString)
+    public static HololensConfig CreateFromJSON(string jsonString)
     {
-        Config.instance = JsonUtility.FromJson<Config>(jsonString);
-        return Config.instance;
+        HololensConfig.instance = JsonUtility.FromJson<HololensConfig>(jsonString);
+        return HololensConfig.instance;
     }
 
-    public static Config CreateFromUnityStorage()
+    public static HololensConfig CreateFromUnityStorage()
     {
         if (!PlayerPrefs.HasKey("ConfigId") || !PlayerPrefs.HasKey("ConfigServer"))
         {
@@ -27,7 +27,7 @@ public class Config
         }
         else
         {
-            Config config = new global::Config();
+            HololensConfig config = new global::HololensConfig();
             config.id = PlayerPrefs.GetString("ConfigId");
             config.server = PlayerPrefs.GetString("ConfigServer");
             Debug.Log("[Config:CreateFromUnityStorage] id: " + config.id + " server: " + config.server);

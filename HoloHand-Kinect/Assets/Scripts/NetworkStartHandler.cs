@@ -1,11 +1,13 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using System;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
 using UnityEngine.VR;
 
-public class NetworkStartLogic : MonoBehaviour {
+public class NetworkStartHandler : MonoBehaviour {
 
     #region Inspector properties
     
@@ -15,30 +17,46 @@ public class NetworkStartLogic : MonoBehaviour {
 
     #endregion
 
+    private INetStartLogic startLogic;
     private bool _triedOnce = false;
     private bool _needCam = true;
 
     // Use this for initialization
-    void Start () {
-        Debug.Log("[NetworkStartLogic:Start]");
+    void Start ()
+    {
+        Debug.Log("[NetworkStartHandler:Start]");
+        RegisterSpawnablePrefabs();
+        RegisterPlayer();
+        InstantiateStartLogic();
+        startLogic.LoadConfig();
+    }
+
+    private void RegisterSpawnablePrefabs()
+    {
+        NetworkManager.singleton.spawnPrefabs.Add(hololensPrefab);
+        NetworkManager.singleton.spawnPrefabs.Add(kinectPrefab);
+        NetworkManager.singleton.spawnPrefabs.Add(mobilePrefab);
+    }
+
+    private void RegisterPlayer()
+    {
 #if UNITY_WSA_10_0
-        //If on Hololens
-        Debug.Log("[NetworkStartLogic:Start] running on Hololens");
-        if (hololensPrefab != null){
-            NetworkManager.singleton.playerPrefab = hololensPrefab;
-        }
+        NetworkManager.singleton.playerPrefab = hololensPrefab;
+#elif UNITY_STANDALONE
+        NetworkManager.singleton.playerPrefab = kinectPrefab;
 #elif UNITY_ANDROID
-        Debug.Log("[NetworkStartLogic:Start] running on Android");
         NetworkManager.singleton.playerPrefab = mobilePrefab;
-        //The android app doesn't use a camera
-        _needCam = false;
-#else
-        //on PC
-        Debug.Log("[NetworkStartLogic:Start] running on PC");
-        if (kinectPrefab != null)
-        {
-            NetworkManager.singleton.playerPrefab = kinectPrefab;
-        }
+#endif
+    }
+
+    private void InstantiateStartLogic()
+    {
+#if UNITY_WSA_10_0
+        startLogic = new HololensNetStart();
+#elif UNITY_STANDALONE
+        startLogic = new KinectNetStart();
+#elif UNITY_ANDROID
+        startLogic = new DocentNetStart();
 #endif
     }
 
@@ -51,13 +69,20 @@ public class NetworkStartLogic : MonoBehaviour {
     // Update is called once per frame
     void Update ()
     {
+        if (!NetworkManager.singleton.isNetworkActive &&
+            startLogic.ShouldStartNetwork())
+        {
+            startLogic.StartNetwork();
+        }
+        /*
         //if we have a main camera, and no active network,
         //  then let's start up the network!
         // - we have to wait for a main camera so the avatar will get placed correctly.
         if (!_triedOnce &&
             NetworkManager.singleton != null && 
             !NetworkManager.singleton.isNetworkActive && 
-            (!_needCam || Camera.main != null))
+            (!_needCam || Camera.main != null) &&
+            (!_needConfig || HololensConfig.instance != null))
         {
             _triedOnce = true;
             Debug.Log("[NetworkStartLogic:Update] starting up network");
@@ -72,9 +97,24 @@ public class NetworkStartLogic : MonoBehaviour {
 
             //if we have already tried connecting to the server once, don't try again.
             //  the user can use the HUD to set the correct IP and attempt connecting again.
-            NetworkManager.singleton.networkAddress = "172.16.0.130";
+            if (_needConfig)
+            {
+                NetworkManager.singleton.networkAddress = HololensConfig.instance.server;
+            }
+            else
+            {
+                NetworkManager.singleton.networkAddress = "172.16.0.130";
+            }
             NetworkManager.singleton.StartClient();
 #endif
+
+            if (_saveConfig)
+            {
+                HololensConfig.instance.SaveToUnityStorage();
+                _saveConfig = false;
+            }
         }
+        */
     }
+
 }

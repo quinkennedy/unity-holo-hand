@@ -35,21 +35,15 @@ public class HololensAvatarLogic : NetworkBehaviour {
     }
 
     [Command]
-    private void CmdSetIP(string IP)
-    {
-        this.IP = IP;
-    }
-
-    [Command]
     private void CmdSetFragmentIndex(int index)
     {
         this.ReportedFragmentIndex = index;
     }
 
-
     // Use this for initialization
     void Start()
     {
+        Debug.Log("[HololensAvatarLogic:Start] ID: " + ID + " IP: " + IP);
         CalibrationPlane = transform.Find("KinectCalibrationPlane");
         CalibrationModel = CalibrationPlane.Find("Model").gameObject;
         //CalibrationModel.SetActive(false);
@@ -61,7 +55,6 @@ public class HololensAvatarLogic : NetworkBehaviour {
         {
             //TODO: load from config
             CmdSetID("D3AD BE47");
-            CmdSetIP(NetworkManager.singleton.networkAddress);
             MyCalibration = CalibrationPlane;
             HMD = transform.Find("HMD");
 

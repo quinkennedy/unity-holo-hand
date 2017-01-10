@@ -37,7 +37,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.46169513, g: 0.5124164, b: 0.58993304, a: 1}
+  m_IndirectSpecularColor: {r: 0.44657868, g: 0.49641263, b: 0.57481706, a: 1}
 --- !u!157 &3
 LightmapSettings:
   m_ObjectHideFlags: 0
@@ -368,10 +368,7 @@ MonoBehaviour:
   m_PlayerSpawnMethod: 0
   m_OfflineScene: 
   m_OnlineScene: 
-  m_SpawnPrefabs:
-  - {fileID: 1669977710138828, guid: 6efafe5337fc7144b8c54af9cc2e9174, type: 2}
-  - {fileID: 1809351004467922, guid: 92b7746b44a823644922240d705b62e7, type: 2}
-  - {fileID: 1068428902944096, guid: 4c9e24efce428e145acc61e8614e93b1, type: 2}
+  m_SpawnPrefabs: []
   m_CustomConfig: 0
   m_MaxConnections: 4
   m_ConnectionConfig:
@@ -401,7 +398,7 @@ MonoBehaviour:
     m_ReactorMaximumReceivedMessages: 1024
     m_ReactorMaximumSentMessages: 1024
     m_MaxPacketSize: 2000
-  m_Channels: 
+  m_Channels: 0500000000000000
   m_UseWebSockets: 0
   m_UseSimulator: 0
   m_SimulatedLatency: 1
@@ -541,7 +538,8 @@ MonoBehaviour:
     type: 2}
   kinectPrefab: {fileID: 1809351004467922, guid: 92b7746b44a823644922240d705b62e7,
     type: 2}
-  mobilePrefab: {fileID: 0}
+  mobilePrefab: {fileID: 1068428902944096, guid: 4c9e24efce428e145acc61e8614e93b1,
+    type: 2}
 --- !u!4 &1620617081
 Transform:
   m_ObjectHideFlags: 0

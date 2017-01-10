@@ -80,6 +80,13 @@ public class HololensPane : MonoBehaviour {
     {
         return (linkedHololens != null);
     }
+
+    public void getBatteryCharge()
+    {
+        //accept all certificates
+        System.Net.ServicePointManager.ServerCertificateValidationCallback = (w,x,y,z) => true;
+        System.Net.HttpWebRequest req = (System.Net.HttpWebRequest)System.Net.WebRequest.Create("https://" + linkedHololens.IP + "/api/power/battery")
+    }
 	
 	// Update is called once per frame
 	void Update () {
