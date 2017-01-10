@@ -8,8 +8,7 @@ using UnityEngine.VR;
 public class NetworkStartLogic : MonoBehaviour {
 
     #region Inspector properties
-
-    public NetworkManagerHUD netMgrHUD = null;
+    
     public GameObject hololensPrefab = null;
     public GameObject kinectPrefab = null;
     public GameObject mobilePrefab = null;
@@ -17,6 +16,7 @@ public class NetworkStartLogic : MonoBehaviour {
     #endregion
 
     private bool _triedOnce = false;
+    private bool _needCam = true;
 
     // Use this for initialization
     void Start () {
@@ -25,17 +25,19 @@ public class NetworkStartLogic : MonoBehaviour {
         //If on Hololens
         Debug.Log("[NetworkStartLogic:Start] running on Hololens");
         if (hololensPrefab != null){
-            netMgrHUD.manager.playerPrefab = hololensPrefab;
+            NetworkManager.singleton.playerPrefab = hololensPrefab;
         }
 #elif UNITY_ANDROID
         Debug.Log("[NetworkStartLogic:Start] running on Android");
-        netMgrHUD.manager.playerPrefab = mobilePrefab;
+        NetworkManager.singleton.playerPrefab = mobilePrefab;
+        //The android app doesn't use a camera
+        _needCam = false;
 #else
         //on PC
         Debug.Log("[NetworkStartLogic:Start] running on PC");
         if (kinectPrefab != null)
         {
-            netMgrHUD.manager.playerPrefab = kinectPrefab;
+            NetworkManager.singleton.playerPrefab = kinectPrefab;
         }
 #endif
     }
@@ -52,23 +54,26 @@ public class NetworkStartLogic : MonoBehaviour {
         //if we have a main camera, and no active network,
         //  then let's start up the network!
         // - we have to wait for a main camera so the avatar will get placed correctly.
-        if (netMgrHUD != null && !netMgrHUD.manager.isNetworkActive && Camera.main != null && !_triedOnce)
+        if (!_triedOnce &&
+            NetworkManager.singleton != null && 
+            !NetworkManager.singleton.isNetworkActive && 
+            (!_needCam || Camera.main != null))
         {
             _triedOnce = true;
             Debug.Log("[NetworkStartLogic:Update] starting up network");
 #if UNITY_STANDALONE
             //aka if on PC
             Debug.Log("[NetworkStartLogic:Update] starting network host");
-            netMgrHUD.manager.serverBindToIP = false;
-            netMgrHUD.manager.StartHost();
+            NetworkManager.singleton.serverBindToIP = false;
+            NetworkManager.singleton.StartHost();
 #else
             Debug.Log("[NetworkStartLogic:Update] attempting to connect");
             //otherwise on a HoloLens or mobile device
 
             //if we have already tried connecting to the server once, don't try again.
             //  the user can use the HUD to set the correct IP and attempt connecting again.
-            netMgrHUD.manager.networkAddress = "192.168.1.122";
-            netMgrHUD.manager.StartClient();
+            NetworkManager.singleton.networkAddress = "172.16.0.130";
+            NetworkManager.singleton.StartClient();
 #endif
         }
     }

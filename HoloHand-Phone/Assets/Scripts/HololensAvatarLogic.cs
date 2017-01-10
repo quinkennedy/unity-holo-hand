@@ -19,12 +19,33 @@ public class HololensAvatarLogic : NetworkBehaviour {
     private string ObjectAnchorStoreName = "kinect_anchor";
     private bool Placing = false;
     private static Transform MyCalibration;
+    //syncs from server to all clients
     [SyncVar]
     public int ReportedFragmentIndex;
     [SyncVar]
     public string ID;
     [SyncVar]
     public string IP;
+
+    //called on server from localPlayer
+    [Command]
+    private void CmdSetID(string ID)
+    {
+        this.ID = ID;
+    }
+
+    [Command]
+    private void CmdSetIP(string IP)
+    {
+        this.IP = IP;
+    }
+
+    [Command]
+    private void CmdSetFragmentIndex(int index)
+    {
+        this.ReportedFragmentIndex = index;
+    }
+
 
     // Use this for initialization
     void Start()
@@ -38,8 +59,9 @@ public class HololensAvatarLogic : NetworkBehaviour {
 #if UNITY_WSA_10_0
         if (isLocalPlayer)
         {
-            ID = "D3AD BE47";
-            IP = Network.player.ipAddress;
+            //TODO: load from config
+            CmdSetID("D3AD BE47");
+            CmdSetIP(NetworkManager.singleton.networkAddress);
             MyCalibration = CalibrationPlane;
             HMD = transform.Find("HMD");
 
@@ -149,27 +171,27 @@ public class HololensAvatarLogic : NetworkBehaviour {
             Placing = false;
         }
     }
-
+    
     public void CommandNext()
     {
         if (ReportedFragmentIndex == 5)
         {
-            ReportedFragmentIndex = 0;
+            CmdSetFragmentIndex(0);
         }
         else
         {
-            ReportedFragmentIndex++;
+            CmdSetFragmentIndex(ReportedFragmentIndex++);
         }
     }
-
+    
     public void CommandPrevious()
     {
         if (ReportedFragmentIndex == 0)
         {
-            ReportedFragmentIndex = 5;
+            CmdSetFragmentIndex(5);
         } else
         {
-            ReportedFragmentIndex--;
+            CmdSetFragmentIndex(ReportedFragmentIndex--);
         }
     }
 #endif
