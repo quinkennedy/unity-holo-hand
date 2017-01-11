@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using UnityEngine;
+using UnityEngine.Networking;
 using UnityEngine.UI;
 
 public class HololensPane : MonoBehaviour {
@@ -11,6 +12,8 @@ public class HololensPane : MonoBehaviour {
     public InputField IPField;
     public TabLogic tab;
     private HololensAvatarLogic linkedHololens;
+    public static string HololensAppId = "App";
+    public static string HololensPackageName = "HoloHand-Lens";
     
     public string ID
     {
@@ -116,7 +119,7 @@ public class HololensPane : MonoBehaviour {
     {
         if (PlayerPrefs.HasKey("hlAuth"))
         {
-            String auth = PlayerPrefs.GetString("hlAuth");
+            String auth = getAuth();
             StartCoroutine(coGetBatteryCharge(auth));
             StartCoroutine(coGetRunningProcesses(auth));
             StartCoroutine(coGetThermalState(auth));
@@ -129,30 +132,95 @@ public class HololensPane : MonoBehaviour {
 
     public void RestartDevice()
     {
-        String auth = PlayerPrefs.GetString("hlAuth");
+        String auth = getAuth();
         StartCoroutine(coPostWithoutResponse("/api/control/restart", auth));
     }
 
     public void ShutdownDevice()
     {
-        String auth = PlayerPrefs.GetString("hlAuth");
+        String auth = getAuth();
         StartCoroutine(coPostWithoutResponse("/api/control/shutdown", auth));
+    }
+
+    public static string Base64Encode(string s)
+    {
+        return System.Convert.ToBase64String(System.Text.Encoding.GetEncoding("ISO-8859-1").GetBytes(s));
+    }
+
+    public static string Hex64Encode(string s)
+    {
+        return Base64Encode(s);
+    }
+
+    private static string getAuth()
+    {
+        return PlayerPrefs.GetString("hlAuth");
     }
 
     public void RestartApp()
     {
-        Base64
+        string auth = getAuth();
+        string appID = Hex64Encode(HololensAppId);
+        string packageName = Hex64Encode(HololensPackageName);
+        StartCoroutine(coRestartApp(auth, appID, packageName));
     }
 
     public void ShutdownApp()
     {
+        string auth = getAuth();
+        string packageName = Hex64Encode(HololensPackageName);
+        StartCoroutine(coShutdownApp(auth, packageName));
+    }
 
+    public IEnumerator coRestartApp(string auth, string encodedAppId, string encodedPackageName)
+    {
+        yield return coShutdownApp(auth, encodedPackageName));
+        yield return coStartApp(auth, encodedAppId, encodedPackageName);
+    }
+
+    public IEnumerator coShutdownApp(string auth, string encodedPackageName)
+    {
+        string endpoint = "/api/taskmanager/app";
+        string Address = "http://" + IP + endpoint;
+        //shutdown application
+        string query = "?package=" + encodedPackageName;//optional 'forcestop=yes' possible
+        return coSendWithoutResponse(UnityWebRequest.Delete(Address + query), auth);
+    }
+
+    public IEnumerator coStartApp(string auth, string encodedAppId, string encodedPackageName)
+    {
+        string endpoint = "/api/taskmanager/app";
+        string Address = "http://" + IP + endpoint;
+        //start application
+        string query = "?appid=" + encodedAppId + "&package=" + encodedPackageName;
+        return coPostWithoutResponse(Address + query, auth);
+    }
+
+    public IEnumerator coSendWithoutResponse(UnityWebRequest req, string auth)
+    {
+        req.SetRequestHeader("AUTHORIZATION", auth);
+        Debug.Log("[HololensPane:coSendWithoutResponse] request to " + req.url);
+        yield return req.Send();
+        while (!req.downloadHandler.isDone)
+        {
+            yield return new WaitForEndOfFrame();
+        }
+
+        if (req.isError)
+        {
+            Debug.LogWarning("[HololensPane:coSendWithoutResponse] error: " + req.error);
+        }
+        else
+        {
+            Debug.Log("[HololensPane:coSendWithoutResponse] success: " + req.downloadHandler.text);
+        }
     }
 
     public IEnumerator coPostWithoutResponse(string endpoint, string auth)
     {
         UnityEngine.Networking.UnityWebRequest req = UnityEngine.Networking.UnityWebRequest.Post("http://" + IP + endpoint, "");
-        req.SetRequestHeader("AUTHORIZATION", auth);
+        return coSendWithoutResponse(req, auth);
+        /*req.SetRequestHeader("AUTHORIZATION", auth);
         Debug.Log("[HololensPane:coPostWithoutResponse] request to " + req.url);
         yield return req.Send();
         while (!req.downloadHandler.isDone)
@@ -167,28 +235,7 @@ public class HololensPane : MonoBehaviour {
         else
         {
             Debug.Log("[HololensPane:coPostWithoutResponse] success: " + req.downloadHandler.text);
-        }
-    }
-    
-    public IEnumerator coRestart(string auth)
-    {
-        UnityEngine.Networking.UnityWebRequest req = UnityEngine.Networking.UnityWebRequest.Get("http://" + IP + "/api/control/restart");
-        req.SetRequestHeader("AUTHORIZATION", auth);
-        Debug.Log("[HololensPane:coGetTemperature] request to " + req.url);
-        yield return req.Send();
-        while (!req.downloadHandler.isDone)
-        {
-            yield return new WaitForEndOfFrame();
-        }
-
-        if (req.isError)
-        {
-            Debug.LogWarning("[HololensPane:coGetTemperature] error: " + req.error);
-        }
-        else
-        {
-            Debug.Log("[HololensPane:coGetTemperature] success: " + req.downloadHandler.text);
-        }
+        }*/
     }
 
     public IEnumerator coGetThermalState(string auth)
