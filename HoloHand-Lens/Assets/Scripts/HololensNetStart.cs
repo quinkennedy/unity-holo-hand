@@ -17,11 +17,12 @@ using System.Threading.Tasks;
 public class HololensNetStart : INetStartLogic
 {
     private bool _saveConfig = false;
+    private bool _loadingConfig = false;
     private static string configName = "config.json";
 
     public override void LoadConfig()
     {
-        LoadConfig(configName, HololensConfig.CreateFromUnityStorage());
+        //LoadConfig(configName, HololensConfig.CreateFromUnityStorage());
     }
 
     public override bool ShouldStartNetwork()
@@ -31,7 +32,19 @@ public class HololensNetStart : INetStartLogic
             HololensConfig.instance.SaveToUnityStorage();
             _saveConfig = false;
         }
-        return (HololensConfig.instance != null);
+        if (HololensConfig.instance != null)
+        {
+            return true;
+        }
+        else
+        {
+            if (!_loadingConfig)
+            {
+                LoadConfig(configName, HololensConfig.CreateFromUnityStorage());
+            }
+            return false;
+        }
+        //return (HololensConfig.instance != null);
     }
 
     public override void StartNetwork()
@@ -48,12 +61,14 @@ public class HololensNetStart : INetStartLogic
     {
         HololensConfig.CreateFromJSON(json);
         Debug.Log("[NetworkStartLogic:ParseConfig] Config " + HololensConfig.instance);
+        _loadingConfig = false;
     }
 
 #if UNITY_EDITOR
 
     public void LoadConfig(string jsonFile, HololensConfig storedConfig)
     {
+        _loadingConfig = true;
         string configJson = File.ReadAllText(jsonFile);
         ParseConfig(configJson);
     }
@@ -73,6 +88,7 @@ public class HololensNetStart : INetStartLogic
 
     public async void LoadConfig(string jsonFile, HololensConfig storedConfig)
     {
+        _loadingConfig = true;
         //first choice is load from user-uploaded file
         //second choice is load from Unity storage
         //final choice is load from json included with installation package

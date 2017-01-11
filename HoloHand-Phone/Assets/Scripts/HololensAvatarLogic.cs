@@ -40,6 +40,17 @@ public class HololensAvatarLogic : NetworkBehaviour {
         this.ReportedFragmentIndex = index;
     }
 
+    public delegate void DestroyedCallback();
+    public List<DestroyedCallback> OnDestroyListeners = new List<DestroyedCallback>();
+
+    public override void OnNetworkDestroy()
+    {
+        foreach(DestroyedCallback callback in OnDestroyListeners)
+        {
+            callback();
+        }
+    }
+
     // Use this for initialization
     void Start()
     {
@@ -53,8 +64,6 @@ public class HololensAvatarLogic : NetworkBehaviour {
 #if UNITY_WSA_10_0
         if (isLocalPlayer)
         {
-            //TODO: load from config
-            CmdSetID("D3AD BE47");
             MyCalibration = CalibrationPlane;
             HMD = transform.Find("HMD");
 
@@ -104,6 +113,8 @@ public class HololensAvatarLogic : NetworkBehaviour {
         HololensTabWrangler.Instance.RegisterHololens(this);
 #endif
     }
+
+
 
 #if UNITY_WSA_10_0
     // Update is called once per frame

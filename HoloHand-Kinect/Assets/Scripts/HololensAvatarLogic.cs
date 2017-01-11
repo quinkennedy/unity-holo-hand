@@ -53,8 +53,6 @@ public class HololensAvatarLogic : NetworkBehaviour {
 #if UNITY_WSA_10_0
         if (isLocalPlayer)
         {
-            //TODO: load from config
-            CmdSetID("D3AD BE47");
             MyCalibration = CalibrationPlane;
             HMD = transform.Find("HMD");
 

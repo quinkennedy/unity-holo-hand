@@ -51,7 +51,7 @@ public class HololensTabWrangler : MonoBehaviour {
             //remove the tab from our list
             hlTabs.RemoveAt(tabToRemove);
             //remove the tab from saved state
-            HololensPane.DeleteData(hlTabs.Count - 1);
+            HololensPane.DeleteData(hlTabs.Count);
             PlayerPrefs.SetInt("NumDevices", hlTabs.Count);
             PlayerPrefs.Save();
             //remove the tab from the scene

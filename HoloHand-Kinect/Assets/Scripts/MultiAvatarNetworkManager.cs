@@ -23,7 +23,10 @@ public class MultiAvatarNetworkManager : NetworkManager {
         HololensAvatarLogic hlPlayer = player.GetComponent<HololensAvatarLogic>();
         if (hlPlayer != null)
         {
-            hlPlayer.IP = conn.address;
+            string fullAddress = conn.address;
+            //filter out the ipv4 address section
+            System.Text.RegularExpressions.Match match = System.Text.RegularExpressions.Regex.Match(fullAddress, @"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}");
+            hlPlayer.IP = match.Value;
             hlPlayer.ID = message.avatarName;
         }
         NetworkServer.AddPlayerForConnection(conn, player, playerControllerId);
@@ -51,5 +54,12 @@ public class MultiAvatarNetworkManager : NetworkManager {
     public override void OnClientSceneChanged(NetworkConnection conn)
     {
         //base.OnClientSceneChanged(conn);
+    }
+
+    private void OnPlayerDisconnected(NetworkPlayer player)
+    {
+        Debug.Log("[MultiAvatarNetworkManager:OnPlayerDisconnected] cleaning up " + player);
+        Network.RemoveRPCs(player);
+        Network.DestroyPlayerObjects(player);
     }
 }
