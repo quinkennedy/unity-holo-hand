@@ -6,40 +6,69 @@ using UnityEngine.UI;
 
 public class ConfigPane : MonoBehaviour {
 
+    public List<Text> authPlaceholderText;
+    public InputField ServerIP;
+    public InputField HLUser, HLPass;
+    public Toggle ServerConnectedToggle;
+    public static ConfigPane instance;
+    private bool _needConfig = true;
+    public bool needConfig
+    {
+        get
+        {
+            return _needConfig;
+        }
+    }
+
 	// Use this for initialization
 	void Start ()
     {
-        InputField ip = getInputFieldChild("ServerIP");
+        instance = this;
         bool setIP = false;
         if (PlayerPrefs.HasKey("serverIP"))
         {
             string savedIP = PlayerPrefs.GetString("serverIP");
             if (savedIP != null && savedIP.Length > 0)
             {
-                ip.text = savedIP;
+                ServerIP.text = savedIP;
                 setIP = true;
             }
         }
         if (!setIP)
         {
-            ip.text = NetworkManager.singleton.networkAddress;
+            ServerIP.text = NetworkManager.singleton.networkAddress;
         }
 
         if (PlayerPrefs.HasKey("hlAuth"))
         {
-            getInputFieldChild("HL User").transform.Find("Placeholder").GetComponent<Text>().text = "Loaded";
-            getInputFieldChild("HL Pass").transform.Find("Placeholder").GetComponent<Text>().text = "Loaded";
+            foreach(Text pt in authPlaceholderText)
+            {
+                pt.text = "Loaded";
+            }
+            //and bring the overview to front
+            GetComponent<RectTransform>().SetAsFirstSibling();
         }
 	}
 
-    private InputField getInputFieldChild(string name)
+    public void OnConnectedToServer()
     {
-        return transform.Find("Pane").Find(name).Find("InputField").GetComponent<InputField>();
+        Debug.Log("[ConfigPane:OnConnectedToServer]");
+        ServerConnectedToggle.isOn = true;
     }
-	
-	// Update is called once per frame
-	void Update () {
-		
+
+    public void OnDisconnectedFromServer()
+    {
+        Debug.Log("[ConfigPane:OnDisconnectedFromServer]");
+        ServerConnectedToggle.isOn = false;
+    }
+
+    public void OnDisconnectedFromServer(NetworkDisconnection info)
+    {
+        OnDisconnectedFromServer();
+    }
+
+    // Update is called once per frame
+    void Update () {
 	}
 
     public void SetServerIP(string ip)
@@ -53,7 +82,8 @@ public class ConfigPane : MonoBehaviour {
     private static string authenticate(string username, string password)
     {
         string auth = username + ":" + password;
-        auth = System.Convert.ToBase64String(System.Text.Encoding.GetEncoding("ISO-8859-1").GetBytes(auth));
+        auth = System.Convert.ToBase64String(
+            System.Text.Encoding.GetEncoding("ISO-8859-1").GetBytes(auth));
         auth = "Basic " + auth;
         return auth;
     }
@@ -61,11 +91,9 @@ public class ConfigPane : MonoBehaviour {
     public void SetHololensLogin()
     {
         Debug.Log("[ConfigPane.SetHololensLogin] set login");
-        InputField userField = getInputFieldChild("HL User");
-        InputField passField = getInputFieldChild("HL Pass");
-        string auth = authenticate(userField.text, passField.text);
-        userField.text = "";
-        passField.text = "";
+        string auth = authenticate(HLUser.text, HLPass.text);
+        HLUser.text = "";
+        HLPass.text = "";
 
         PlayerPrefs.SetString("hlAuth", auth);
         PlayerPrefs.Save();

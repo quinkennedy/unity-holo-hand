@@ -40,6 +40,17 @@ public class HololensAvatarLogic : NetworkBehaviour {
         this.ReportedFragmentIndex = index;
     }
 
+    public delegate void DestroyedCallback();
+    public List<DestroyedCallback> OnDestroyListeners = new List<DestroyedCallback>();
+
+    public override void OnNetworkDestroy()
+    {
+        foreach (DestroyedCallback callback in OnDestroyListeners)
+        {
+            callback();
+        }
+    }
+
     // Use this for initialization
     void Start()
     {

@@ -45,7 +45,7 @@ public class HololensAvatarLogic : NetworkBehaviour {
 
     public override void OnNetworkDestroy()
     {
-        foreach(DestroyedCallback callback in OnDestroyListeners)
+        foreach (DestroyedCallback callback in OnDestroyListeners)
         {
             callback();
         }
@@ -113,8 +113,6 @@ public class HololensAvatarLogic : NetworkBehaviour {
         HololensTabWrangler.Instance.RegisterHololens(this);
 #endif
     }
-
-
 
 #if UNITY_WSA_10_0
     // Update is called once per frame
