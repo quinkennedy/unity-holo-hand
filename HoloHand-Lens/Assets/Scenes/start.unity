@@ -229,10 +229,7 @@ MonoBehaviour:
   m_PlayerSpawnMethod: 0
   m_OfflineScene: 
   m_OnlineScene: 
-  m_SpawnPrefabs:
-  - {fileID: 1669977710138828, guid: 6efafe5337fc7144b8c54af9cc2e9174, type: 2}
-  - {fileID: 1809351004467922, guid: 92b7746b44a823644922240d705b62e7, type: 2}
-  - {fileID: 1068428902944096, guid: 4c9e24efce428e145acc61e8614e93b1, type: 2}
+  m_SpawnPrefabs: []
   m_CustomConfig: 0
   m_MaxConnections: 4
   m_ConnectionConfig:
@@ -316,7 +313,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d55516ddb64d3bc4c9839d0dc6408553, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  netMgrHUD: {fileID: 185422624}
   hololensPrefab: {fileID: 1669977710138828, guid: 6efafe5337fc7144b8c54af9cc2e9174,
     type: 2}
   kinectPrefab: {fileID: 1809351004467922, guid: 92b7746b44a823644922240d705b62e7,
@@ -484,7 +480,7 @@ MonoBehaviour:
           m_CallState: 2
       m_TypeName: UnityEngine.Events.UnityEvent, UnityEngine, Version=0.0.0.0, Culture=neutral,
         PublicKeyToken=null
-  - Keyword: and then
+  - Keyword: next
     KeyCode: 0
     Response:
       m_PersistentCalls:

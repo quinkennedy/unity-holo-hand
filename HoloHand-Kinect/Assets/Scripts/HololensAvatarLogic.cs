@@ -19,10 +19,72 @@ public class HololensAvatarLogic : NetworkBehaviour {
     private string ObjectAnchorStoreName = "kinect_anchor";
     private bool Placing = false;
     private static Transform MyCalibration;
+    public SyncListString StateNames = new SyncListString();
+    //syncs from server to all clients
+    [SyncVar]
+    public int StateIndex;
+    [SyncVar]
+    public string ID;
+    [SyncVar]
+    public string IP;
+
+    [Command]
+    private void CmdSetStateIndex(int index)
+    {
+        this.StateIndex = index;
+    }
+
+    [TargetRpc]
+    public void TargetChangeState(NetworkConnection target, int index)
+    {
+        Debug.Log("[HololensAvatarLogic:TargetChangeState] new state: " + index);
+        //
+        //Handle state change here
+        //
+
+        //Sync the new state to all clients
+        CmdSetStateIndex(index);
+    }
+
+    [ClientRpc]
+    private void RpcNotifyStates(string[] states)
+    {
+        Debug.Log("[HololensAvatarLogic:TargetSetStates] new state list");
+        foreach (StateListCallback callback in OnStateListListeners)
+        {
+            callback(states);
+        }
+    }
+
+    [Command]
+    private void CmdSetStates(string[] states)
+    {
+        StateNames.Clear();
+        foreach (string state in states)
+        {
+            StateNames.Add(state);
+        }
+        RpcNotifyStates(states);
+    }
+
+    public delegate void StateListCallback(string[] states);
+    public List<StateListCallback> OnStateListListeners = new List<StateListCallback>();
+
+    public delegate void DestroyedCallback();
+    public List<DestroyedCallback> OnDestroyListeners = new List<DestroyedCallback>();
+
+    public override void OnNetworkDestroy()
+    {
+        foreach (DestroyedCallback callback in OnDestroyListeners)
+        {
+            callback();
+        }
+    }
 
     // Use this for initialization
     void Start()
     {
+        Debug.Log("[HololensAvatarLogic:Start] ID: " + ID + " IP: " + IP);
         CalibrationPlane = transform.Find("KinectCalibrationPlane");
         CalibrationModel = CalibrationPlane.Find("Model").gameObject;
         //CalibrationModel.SetActive(false);
@@ -32,34 +94,20 @@ public class HololensAvatarLogic : NetworkBehaviour {
 #if UNITY_WSA_10_0
         if (isLocalPlayer)
         {
-            MyCalibration = CalibrationPlane;
             HMD = transform.Find("HMD");
 
-            if (WorldAnchorManager.Instance != null)
-            {
-                WorldAnchorManager.Instance.AttachAnchor(CalibrationPlane.gameObject, ObjectAnchorStoreName);
-            }
-            else
-            {
-                Debug.LogWarning("[HololensAvatarLogic:Start] WorldAnchorManager.Instance is null");
-            }
+            InitCalibrationAnchor();
+            RegisterCommands();
+            RegisterStates();
 
-            KeywordManager keywordManager = Camera.main.GetComponent<KeywordManager>();
-            if (keywordManager != null)
-            {
-                Debug.Log("[HololensAvatarLogic:Start] updating keyword listeners");
-                keywordManager.KeywordsAndResponses[0].Response.AddListener(this.Reset);
-                keywordManager.KeywordsAndResponses[1].Response.AddListener(this.Place);
-            }
-            else
-            {
-                Debug.LogWarning("[KinectCalibrationPlane:Start] Didn't locate KeywordManager");
-            }
         } else
         {
             GameObject wrapper = new GameObject("RemoteLensWrapper");
             transform.SetParent(wrapper.transform);
         }
+#elif UNITY_ANDROID
+        Debug.Log("[HololensAvatarLogic:Start] remote Hololens spawned on Android device");
+        HololensTabWrangler.Instance.RegisterHololens(this);
 #endif
     }
 
@@ -88,7 +136,56 @@ public class HololensAvatarLogic : NetworkBehaviour {
         }
     }
 
-    public void Reset()
+    private void InitCalibrationAnchor()
+    {
+        MyCalibration = CalibrationPlane;
+        if (WorldAnchorManager.Instance != null)
+        {
+            WorldAnchorManager.Instance.AttachAnchor(CalibrationPlane.gameObject, ObjectAnchorStoreName);
+        }
+        else
+        {
+            Debug.LogWarning("[HololensAvatarLogic:Start] WorldAnchorManager.Instance is null");
+        }
+    }
+
+    private void RegisterCommands()
+    {
+        KeywordManager keywordManager = Camera.main.GetComponent<KeywordManager>();
+        if (keywordManager != null)
+        {
+            Debug.Log("[HololensAvatarLogic:Start] updating keyword listeners");
+            foreach (KeywordManager.KeywordAndResponse kna in keywordManager.KeywordsAndResponses)
+            {
+                switch (kna.Keyword.ToLower())
+                {
+                    case "reset":
+                        kna.Response.AddListener(this.CommandUnlockKinectCalibration);
+                        break;
+                    case "place":
+                        kna.Response.AddListener(this.CommandLockKinectCalibration);
+                        break;
+                    case "next":
+                        kna.Response.AddListener(this.CommandNext);
+                        break;
+                    case "back":
+                        kna.Response.AddListener(this.CommandPrevious);
+                        break;
+                }
+            }
+        }
+        else
+        {
+            Debug.LogWarning("[KinectCalibrationPlane:Start] Didn't locate KeywordManager");
+        }
+    }
+
+    private void RegisterStates()
+    {
+        CmdSetStates(new string[] { "calibrate", "intro", "set stage", "inset", "pool" });
+    }
+
+    public void CommandUnlockKinectCalibration()
     {
         Debug.Log("[KinectCalibrationPlane:Reset]");
 
@@ -109,7 +206,7 @@ public class HololensAvatarLogic : NetworkBehaviour {
         Placing = true;
     }
 
-    public void Place()
+    public void CommandLockKinectCalibration()
     {
         Debug.Log("[KinectCalibrationPlane:Place] " + gameObject);
 
@@ -120,6 +217,29 @@ public class HololensAvatarLogic : NetworkBehaviour {
 
             //CalibrationModel.GetComponent<MeshRenderer>().enabled = false;
             Placing = false;
+        }
+    }
+    
+    public void CommandNext()
+    {
+        if (StateIndex == 5)
+        {
+            CmdSetStateIndex(0);
+        }
+        else
+        {
+            CmdSetStateIndex(StateIndex++);
+        }
+    }
+    
+    public void CommandPrevious()
+    {
+        if (StateIndex == 0)
+        {
+            CmdSetStateIndex(5);
+        } else
+        {
+            CmdSetStateIndex(StateIndex--);
         }
     }
 #endif

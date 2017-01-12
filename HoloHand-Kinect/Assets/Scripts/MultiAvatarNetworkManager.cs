@@ -10,6 +10,7 @@ public class MultiAvatarNetworkManager : NetworkManager {
     {
         //default to index 0 which should be a "generic" avatar
         public int avatarIndex = 0;
+        public string avatarName = "";
     }
 
     public override void OnServerAddPlayer(NetworkConnection conn, short playerControllerId, NetworkReader extraMessageReader)
@@ -17,8 +18,17 @@ public class MultiAvatarNetworkManager : NetworkManager {
         AvatarMessage message = extraMessageReader.ReadMessage<AvatarMessage>();
         int selectedAvatar = message.avatarIndex;
         Debug.Log("[MultiAvatarNetworkManager:OnServerAddPlayer] server add with message " + selectedAvatar);
-
         GameObject player = Instantiate(spawnPrefabs[selectedAvatar]);
+        //if this is a hololens, lets add it's extra data for the Docent UI
+        HololensAvatarLogic hlPlayer = player.GetComponent<HololensAvatarLogic>();
+        if (hlPlayer != null)
+        {
+            string fullAddress = conn.address;
+            //filter out the ipv4 address section
+            System.Text.RegularExpressions.Match match = System.Text.RegularExpressions.Regex.Match(fullAddress, @"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}");
+            hlPlayer.IP = match.Value;
+            hlPlayer.ID = message.avatarName;
+        }
         NetworkServer.AddPlayerForConnection(conn, player, playerControllerId);
     }
 
@@ -31,6 +41,9 @@ public class MultiAvatarNetworkManager : NetworkManager {
             if (spawnPrefabs[i].Equals(playerPrefab))
             {
                 msg.avatarIndex = i;
+#if UNITY_WSA_10_0
+                msg.avatarName = HololensConfig.instance.id;
+#endif
                 break;
             }
         }
@@ -38,9 +51,15 @@ public class MultiAvatarNetworkManager : NetworkManager {
         ClientScene.AddPlayer(conn, 0, msg);
     }
 
-
     public override void OnClientSceneChanged(NetworkConnection conn)
     {
         //base.OnClientSceneChanged(conn);
+    }
+
+    private void OnPlayerDisconnected(NetworkPlayer player)
+    {
+        Debug.Log("[MultiAvatarNetworkManager:OnPlayerDisconnected] cleaning up " + player);
+        Network.RemoveRPCs(player);
+        Network.DestroyPlayerObjects(player);
     }
 }

@@ -23,10 +23,6 @@ public class HololensTabWrangler : MonoBehaviour {
 
     public void setActiveTab(TabLogic tab)
     {
-        if (activeTab != null)
-        {
-            activeTab.backgrounded();
-        }
         activeTab = tab;
     }
 
@@ -47,27 +43,36 @@ public class HololensTabWrangler : MonoBehaviour {
 
         if (tabToRemove != -1)
         {
-            configTab.clicked();
             //remove the tab from our list
             hlTabs.RemoveAt(tabToRemove);
             //remove the tab from saved state
-            HololensPane.DeleteData(hlTabs.Count - 1);
+            HololensPane.DeleteData(hlTabs.Count);
             PlayerPrefs.SetInt("NumDevices", hlTabs.Count);
             PlayerPrefs.Save();
             //remove the tab from the scene
             GameObject.Destroy(pane.tab.gameObject);
             GameObject.Destroy(pane.gameObject);
         } else {
-            Debug.LogWarning("[HololensTabWrangler:deletTab] couldn't find tab");
+            Debug.LogWarning(
+                "[HololensTabWrangler:deletTab] couldn't find tab");
         }
     }
 
     private HololensPane createTab()
     {
-        //create the tab and pane separately since they go in different containers
-        GameObject tabGO = GameObject.Instantiate(tabPrefab, transform.Find("TabPanel"), false);
+        //create the tab and pane separately 
+        //since they go in different containers
+        GameObject tabGO = 
+            GameObject.Instantiate(
+                tabPrefab, 
+                transform.Find("ContentPanel").Find("OverviewPane"), 
+                false);
         TabLogic tab = tabGO.GetComponent<TabLogic>();
-        GameObject paneGO = GameObject.Instantiate(hololensPanePrefab, transform.Find("ContentPanel"), false);
+        GameObject paneGO = 
+            GameObject.Instantiate(
+                hololensPanePrefab, 
+                transform.Find("ContentPanel"), 
+                false);
         HololensPane pane = paneGO.GetComponent<HololensPane>();
 
         //connect the tab and pane together
@@ -76,7 +81,6 @@ public class HololensTabWrangler : MonoBehaviour {
 
         //make sure the pane doesn't interrupt the current view
         paneGO.transform.SetAsFirstSibling();
-        tab.backgrounded();
 
         hlTabs.Add(pane);
         return pane;
@@ -90,8 +94,6 @@ public class HololensTabWrangler : MonoBehaviour {
             HololensPane pane = createTab();
             pane.LoadData(i);
         }
-        //start with the config tab active
-        configTab.clicked();
     }
 
     public void RegisterHololens(HololensAvatarLogic hololens)
