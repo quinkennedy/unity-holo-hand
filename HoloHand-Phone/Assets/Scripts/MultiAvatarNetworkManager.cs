@@ -56,10 +56,14 @@ public class MultiAvatarNetworkManager : NetworkManager {
         //base.OnClientSceneChanged(conn);
     }
 
+#if !UNITY_WSA_10_0
+    //TODO: I don't think we should have to totally comment this out on WSA,
+    // but we don't need it there, and it is causing compile errors in Unity
     private void OnPlayerDisconnected(NetworkPlayer player)
     {
         Debug.Log("[MultiAvatarNetworkManager:OnPlayerDisconnected] cleaning up " + player);
         Network.RemoveRPCs(player);
         Network.DestroyPlayerObjects(player);
     }
+#endif
 }
