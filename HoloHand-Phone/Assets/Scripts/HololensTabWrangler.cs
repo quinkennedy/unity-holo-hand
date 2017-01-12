@@ -43,7 +43,6 @@ public class HololensTabWrangler : MonoBehaviour {
 
         if (tabToRemove != -1)
         {
-            configTab.clicked();
             //remove the tab from our list
             hlTabs.RemoveAt(tabToRemove);
             //remove the tab from saved state
@@ -95,8 +94,6 @@ public class HololensTabWrangler : MonoBehaviour {
             HololensPane pane = createTab();
             pane.LoadData(i);
         }
-        //start with the config tab active
-        //configTab.clicked();
     }
 
     public void RegisterHololens(HololensAvatarLogic hololens)

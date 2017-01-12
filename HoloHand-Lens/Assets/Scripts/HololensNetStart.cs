@@ -34,7 +34,11 @@ public class HololensNetStart : INetStartLogic
         }
         if (HololensConfig.instance != null)
         {
+#if UNITY_EDITOR
+            return false;
+#else
             return true;
+#endif
         }
         else
         {
@@ -45,7 +49,7 @@ public class HololensNetStart : INetStartLogic
             return false;
         }
         //return (HololensConfig.instance != null);
-    }
+        }
 
     public override void StartNetwork()
     {

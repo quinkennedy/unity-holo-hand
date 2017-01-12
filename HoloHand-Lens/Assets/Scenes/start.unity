@@ -480,7 +480,7 @@ MonoBehaviour:
           m_CallState: 2
       m_TypeName: UnityEngine.Events.UnityEvent, UnityEngine, Version=0.0.0.0, Culture=neutral,
         PublicKeyToken=null
-  - Keyword: and then
+  - Keyword: next
     KeyCode: 0
     Response:
       m_PersistentCalls:

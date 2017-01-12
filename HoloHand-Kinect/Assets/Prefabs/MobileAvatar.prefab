@@ -20,6 +20,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4355843481599938}
   - component: {fileID: 114152980996146584}
+  - component: {fileID: 114790369407117248}
   m_Layer: 0
   m_Name: MobileAvatar
   m_TagString: Untagged
@@ -72,3 +73,14 @@ MonoBehaviour:
     i15: 177
   m_ServerOnly: 0
   m_LocalPlayerAuthority: 1
+--- !u!114 &114790369407117248
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1068428902944096}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b56b3fe605759e84087fccee29358d18, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

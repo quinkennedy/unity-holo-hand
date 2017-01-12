@@ -17,6 +17,8 @@ public class HololensPane : MonoBehaviour {
     public Toggle ConnectedToServerToggle;
     public Toggle AppRunningToggle;
     public Slider BatterySlider;
+    public Text Title;
+    public Dropdown StateSelection;
     
     public string ID
     {
@@ -35,6 +37,7 @@ public class HololensPane : MonoBehaviour {
             if (tab != null)
             {
                 tab.Title = value;
+                Title.text = value;
             }
         }
     }
@@ -111,12 +114,38 @@ public class HololensPane : MonoBehaviour {
         linkedHololens = hololens;
         setConnectedToServer(true);
         linkedHololens.OnDestroyListeners.Add(HololensDisconnected);
+        string[] states = new string[linkedHololens.StateNames.Count];
+        for (int i = 0; i < states.Length; i++) {
+            states[i] = linkedHololens.StateNames[i];
+        }
+        StatesChanged(states);
+        linkedHololens.OnStateListListeners.Add(StatesChanged);
     }
 
     public void HololensDisconnected()
     {
         linkedHololens = null;
         setConnectedToServer(false);
+    }
+
+    public void StatesChanged(string[] states)
+    {
+        List<Dropdown.OptionData> options = new List<Dropdown.OptionData>(states.Length);
+        foreach(string state in states)
+        {
+            options.Add(new Dropdown.OptionData(state));
+        }
+        int selected = StateSelection.value;
+        StateSelection.options = options;
+        StateSelection.value = selected;
+    }
+
+    public void SetState()
+    {
+        if (hasLinkedHololens())
+        {
+            MobileAvatarLogic.myself.CmdChangeClientState(linkedHololens.netId, StateSelection.value);
+        }
     }
 
     public bool hasLinkedHololens()

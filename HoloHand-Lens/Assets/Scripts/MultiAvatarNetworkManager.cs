@@ -55,4 +55,11 @@ public class MultiAvatarNetworkManager : NetworkManager {
     {
         //base.OnClientSceneChanged(conn);
     }
+
+    private void OnPlayerDisconnected(NetworkPlayer player)
+    {
+        Debug.Log("[MultiAvatarNetworkManager:OnPlayerDisconnected] cleaning up " + player);
+        Network.RemoveRPCs(player);
+        Network.DestroyPlayerObjects(player);
+    }
 }
