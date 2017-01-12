@@ -7,7 +7,22 @@ public class KinectAvatarLogic : NetworkBehaviour {
 
     public static KinectAvatarLogic MyAvatar;
     public bool robustTracking = false;
-    public float confidence;
+
+    [SyncVar]
+    private float _confidence;  
+    public float confidence {
+        get
+        {
+            return _confidence;
+        }
+
+        set
+        {
+            CmdSetConfidence(value);
+        }
+
+    }
+
     public bool previousRobustTracking = false;
     public float jumpLimit;
     public int minHandPoints;
@@ -28,6 +43,12 @@ public class KinectAvatarLogic : NetworkBehaviour {
         public Vector3 scale;
     }
 
+    [Command]
+    public void CmdSetConfidence( float val)
+    {
+        _confidence = val;
+    }
+	
 #if UNITY_STANDALONE
     public void PlaceAvatar(List<Vector3> handPoints, Transform kinectTransform)
     {

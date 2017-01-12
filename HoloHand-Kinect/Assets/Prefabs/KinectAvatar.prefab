@@ -197,10 +197,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   robustTracking: 0
-  confidence: 0
   previousRobustTracking: 0
   jumpLimit: 0.15
   minHandPoints: 5
+  enableRotation: 1
 --- !u!114 &114716543035425072
 MonoBehaviour:
   m_ObjectHideFlags: 1
