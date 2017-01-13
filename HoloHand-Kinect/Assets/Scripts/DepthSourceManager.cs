@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Windows.Kinect;
 using System.Threading;
 using System.Linq;
+using System;
 
 public struct MeshData
 {
@@ -35,25 +36,33 @@ public class DepthSourceManager : MonoBehaviour
 
     //max size of mesh vertices is 64k. 512x424 depth points generates 200k vertices. need to down size
     //TODO: figure out submeshes so that you can use native resolution
-    private const int DownsampleSize = 4;
+    private int DownsampleSize = 2;
+
+    public void SetDownSampleSize( int value)
+    {
+        DownsampleSize = value;
+    }
 
     public MeshData GetData()
     {
         MeshData result = new MeshData();
-        if (Monitor.TryEnter(_DataLock, 15))
+        if (Monitor.TryEnter(_DataLock, 5))
         { 
             try
             {
                 if (_Vertices != null)
                 {
                     result.Vertices = new Vector3[_Vertices.Length];
-                    _Vertices.CopyTo(result.Vertices, 0);
+                    Array.Copy(_Vertices, 0, result.Vertices, 0, _Vertices.Length);
+
+                    //_Vertices.CopyTo(result.Vertices, 0);
                 }
 
                 if (_Triangles != null)
                 {
                     result.Triangles = new int[_Triangles.Length];
-                    _Triangles.CopyTo(result.Triangles, 0);
+                    //_Triangles.CopyTo(result.Triangles, 0);
+                    Array.Copy(_Triangles, 0, result.Triangles, 0, _Triangles.Length);
                 }
             }
             finally
@@ -115,7 +124,7 @@ public class DepthSourceManager : MonoBehaviour
     {
         if (frame != null)
         {
-            if (Monitor.TryEnter(_DataLock, 15))
+            if (Monitor.TryEnter(_DataLock, 5))
             {
                 try
                 {
@@ -161,7 +170,7 @@ public class DepthSourceManager : MonoBehaviour
     private void UpdateData(System.Object stateInfo)
     {
 
-        if (Monitor.TryEnter(_DataLock, 15))
+        if (Monitor.TryEnter(_DataLock, 5))
         {
             try
             {
