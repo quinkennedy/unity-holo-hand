@@ -142,6 +142,7 @@ public class HololensPane : MonoBehaviour {
 
     public void SetState()
     {
+        Debug.Log("[HololensPane:SetState] setting state to " + StateSelection.value);
         if (hasLinkedHololens())
         {
             MobileAvatarLogic.myself.CmdChangeClientState(linkedHololens.netId, StateSelection.value);
@@ -386,6 +387,19 @@ public class HololensPane : MonoBehaviour {
     
 	// Update is called once per frame
 	void Update () {
-		
+		if (hasLinkedHololens())
+        {
+            if (StateSelection.value != linkedHololens.StateIndex)
+            {
+                //disable callbacks for this call
+                Dropdown.DropdownEvent backup = StateSelection.onValueChanged;
+                StateSelection.onValueChanged = new Dropdown.DropdownEvent();
+                //change the value
+                StateSelection.value = linkedHololens.StateIndex;
+                StateSelection.RefreshShownValue();
+                //restore callbacks
+                StateSelection.onValueChanged = backup;
+            }
+        }
 	}
 }
