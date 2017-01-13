@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.Networking;
 
 public class MobileAvatarLogic : NetworkBehaviour {
@@ -33,6 +34,7 @@ public class MobileAvatarLogic : NetworkBehaviour {
     public void CmdChangeClientState(NetworkInstanceId target, int index)
     {
         HololensAvatarLogic hololensTarget = NetworkServer.objects[target].GetComponent<HololensAvatarLogic>();
+        Debug.Log("[MobileAvatarLogic:CmdChangeClientState] changing " + hololensTarget.ID + " to " + index);
         hololensTarget.TargetChangeState(hololensTarget.connectionToClient, index);
     }
 }
