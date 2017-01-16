@@ -133,21 +133,19 @@ public class DepthSourceView : MonoBehaviour
     /**
      * remove Vectors from the list of points which are too far from the target
      */
-    private void filterPointsAround(List<Vector3> points, Vector3 target)
+    private List<Vector3> filterPointsAround(List<Vector3> points, Vector3 target, float distance)
     {
-        //move all point in-bounds to beginning of list
-        int nextValid = 0;
-        for(int i = 0; i < points.Count; i++)
+        List<Vector3> list = new List<Vector3>();
+
+        foreach(Vector3 point in points)
         {
-            if (Vector3.Distance(points[i], target) <= pointBucketDistance)
+            if (Vector3.Distance(point, target) <= distance)
             {
-                points[nextValid] = points[i];
-                nextValid++;
+                list.Add(point);
             }
         }
-        //chop off the end of the list (which either contains duplicates
-        // or points which are too far away
-        points.RemoveRange(nextValid, points.Count - nextValid);
+
+        return list;
     }
     
     void ShowInBounds( MeshData d)
@@ -162,9 +160,21 @@ public class DepthSourceView : MonoBehaviour
             List<int> tris = new List<int>();
 
             FurthestPointBucket[] pointBucket = new FurthestPointBucket[buttons.Count];
+            FurthestPointBucket[] roiBucket = new FurthestPointBucket[buttons.Count];
+            List<Vector3>[] pointsInButton = new List<Vector3>[buttons.Count];
             for(int i = 0; i < pointBucket.Length; i++)
             {
                 pointBucket[i] = new FurthestPointBucket();
+                roiBucket[i] = new FurthestPointBucket();
+                pointsInButton[i] = new List<Vector3>();
+            }
+
+            Vector3 roiCenter = new Vector3();
+            float roiRadius;
+            KinectAvatarLogic.MyAvatar.GetROI(out roiCenter, out roiRadius);
+            if (!float.IsPositiveInfinity(roiRadius))
+            {
+                roiRadius += pointBucketDistance;
             }
 
             //get the currently active HoloLens position in plan view
@@ -204,21 +214,31 @@ public class DepthSourceView : MonoBehaviour
                             //if the point is in one of the buttons
                             if (PointInOABB(vL, button))
                             {
-                                //count it
-                                pointBucket[j].numPoints++;
-                                //add all points in the button to the "furthestPoints" list
-                                // we will filter this list later
-                                pointBucket[j].furthestPoints.Add(vL);
+                                pointsInButton[j].Add(vL);
+                                ////count it
+                                //pointBucket[j].numPoints++;
+                                ////add all points in the button to the "furthestPoints" list
+                                //// we will filter this list later
+                                //pointBucket[j].furthestPoints.Add(vL);
 
                                 //keep tabs on which individual point is furthest (in plan view) from the HoloLens
                                 /**
                                  * distance in plan view (x,z) relative to currently active HoloLens
                                  */
                                 float currDistance = Vector2.Distance(HMDposition, new Vector2(vL.x, vL.z));
+                                //track the overall furthest point...
                                 if (currDistance > pointBucket[j].maxDistance)
                                 {
                                     pointBucket[j].furthestPoint = vL;
                                     pointBucket[j].maxDistance = currDistance;
+                                }
+                                //as well as the furthest point inside the current Region Of Interest
+                                if (!float.IsPositiveInfinity(roiRadius) &&
+                                    currDistance > roiBucket[j].maxDistance &&
+                                    Vector3.Distance(vL, roiCenter) <= roiRadius)
+                                {
+                                    roiBucket[j].furthestPoint = vL;
+                                    roiBucket[j].maxDistance = currDistance;
                                 }
                                 break;
                             }
@@ -270,20 +290,36 @@ public class DepthSourceView : MonoBehaviour
             //
             //  Set reference point based the button with the most points in it
             //first find which button has the most data in it
-            FurthestPointBucket selectedButton = null;
-            foreach(FurthestPointBucket button in pointBucket)
+            int selectedButton = -1;
+            for(int i = 0; i < buttons.Count; i++)
             {
-                if (selectedButton == null || selectedButton.numPoints < button.numPoints)
+                if (selectedButton == -1 || pointsInButton[i].Count > pointsInButton[selectedButton].Count)
                 {
-                    selectedButton = button;
+                    selectedButton = i;
                 }
             }
             //now we actually filter what we think are "hand" points based on the furthest point
-            if (selectedButton != null) {
-                filterPointsAround(selectedButton.furthestPoints, selectedButton.furthestPoint);
+            if (selectedButton != -1) {
+                pointBucket[selectedButton].furthestPoints = 
+                    filterPointsAround(pointsInButton[selectedButton], 
+                                       pointBucket[selectedButton].furthestPoint, 
+                                       pointBucketDistance);
+                if (!float.IsPositiveInfinity(roiRadius))
+                {
+                    roiBucket[selectedButton].furthestPoints =
+                        filterPointsAround(pointsInButton[selectedButton],
+                                           roiBucket[selectedButton].furthestPoint,
+                                           pointBucketDistance);
+                }
+                if (roiBucket[selectedButton].furthestPoints.Count > pointBucket[selectedButton].furthestPoints.Count)
+                {
+                    KinectAvatarLogic.MyAvatar.PlaceAvatar(roiBucket[selectedButton].furthestPoints, transform);
+                }
+                else
+                {
+                    KinectAvatarLogic.MyAvatar.PlaceAvatar(pointBucket[selectedButton].furthestPoints, transform);
+                }
             }
-            //and pass the "hand" data to the networked avatar
-            KinectAvatarLogic.MyAvatar.PlaceAvatar(selectedButton.furthestPoints, transform);
         }
     }
 

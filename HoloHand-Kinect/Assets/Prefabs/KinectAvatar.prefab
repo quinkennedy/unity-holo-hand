@@ -200,7 +200,7 @@ MonoBehaviour:
   previousRobustTracking: 0
   jumpLimit: 0.15
   minHandPoints: 5
-  enableRotation: 1
+  enableRotation: 0
 --- !u!114 &114716543035425072
 MonoBehaviour:
   m_ObjectHideFlags: 1

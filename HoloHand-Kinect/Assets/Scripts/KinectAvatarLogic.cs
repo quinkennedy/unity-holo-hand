@@ -18,6 +18,7 @@ public class KinectAvatarLogic : NetworkBehaviour {
 
         set
         {
+            _confidence = value;
             CmdSetConfidence(value);
         }
 
@@ -50,48 +51,60 @@ public class KinectAvatarLogic : NetworkBehaviour {
     }
 	
 #if UNITY_STANDALONE
+    public void GetROI(out Vector3 center, out float radius)
+    {
+        center = transform.position;
+        if (confidence == 0)
+        {
+            radius = float.PositiveInfinity;
+        }
+        else
+        {
+            radius = 1 - confidence;
+        }
+    }
+
     public void PlaceAvatar(List<Vector3> handPoints, Transform kinectTransform)
     {
         //if we don't have very many points, then it is just noise that we should ignore
         robustTracking = (handPoints != null && handPoints.Count >= minHandPoints);
         if (!robustTracking)
         {
-            if (previousRobustTracking)
+            if (confidence == 0)
             {
-                //if we have bad tracking this frame, but had good tracking last frame...
-                //lets leave the point be for one frame in case this is a hiccup
-                confidence = 0.5f;
-            } else
-            {
-                //if we have had bad tracking for the last 2 frames...
                 //set the point to the kinect's location for "safe keeping"
                 //(keep it out of the way, and provides a way to verify kinect alignment)
                 transform.position = kinectTransform.position;
                 transform.rotation = kinectTransform.rotation;
                 //rotate so the plane is parallel to the front face of the Kinect
                 transform.rotation *= Quaternion.Euler(90, 0, 0);
-                confidence = 0;
+            } else
+            {
+                //otherwise, just keep the point where it is. confidence will naturally decay in onUpdate()
             }
         } else
         {
             sTransform computedPoint = getComputedPoint(handPoints);
-            if (previousRobustTracking && 
-                jumpLimit > 0 &&
-                Vector3.Distance(transform.position, computedPoint.position) > jumpLimit)
-            {
-                //if we had good tracking last frame, but the point moved "a lot" between frames
-                //we'll assume it is due to noise.
-                //NOTE: this may be overkill, since single-frame noise would be likely to result
-                //      in a small point list which would end up in the above if block...?
-                robustTracking = false;
-                confidence = 0.5f;
-            } else
-            {
-                //if we have good tracking, track the point!
-                transform.position = computedPoint.position;
-                transform.eulerAngles = computedPoint.rotation;
-                confidence = 1;
-            }
+            transform.position = computedPoint.position;
+            transform.eulerAngles = computedPoint.rotation;
+            confidence = 1;
+            //if (previousRobustTracking && 
+            //    jumpLimit > 0 &&
+            //    Vector3.Distance(transform.position, computedPoint.position) > jumpLimit)
+            //{
+            //    //if we had good tracking last frame, but the point moved "a lot" between frames
+            //    //we'll assume it is due to noise.
+            //    //NOTE: this may be overkill, since single-frame noise would be likely to result
+            //    //      in a small point list which would end up in the above if block...?
+            //    robustTracking = false;
+            //    confidence = 0.5f;
+            //} else
+            //{
+            //    //if we have good tracking, track the point!
+            //    transform.position = computedPoint.position;
+            //    transform.eulerAngles = computedPoint.rotation;
+            //    confidence = 1;
+            //}
         }
         
         previousRobustTracking = robustTracking;
@@ -169,10 +182,13 @@ public class KinectAvatarLogic : NetworkBehaviour {
 
         return transform;
     }
-#endif
 	
 	// Update is called once per frame
 	void Update () {
-		
-	}
+		if (isLocalPlayer)
+        {
+            confidence = Mathf.Max(confidence - Time.deltaTime, 0);
+        }
+    }
+#endif
 }
