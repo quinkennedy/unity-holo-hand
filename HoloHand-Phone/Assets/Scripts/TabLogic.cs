@@ -34,9 +34,4 @@ public class TabLogic : MonoBehaviour {
         //bring the associated content pane to the front
         pane.transform.SetAsLastSibling();
     }
-	
-	// Update is called once per frame
-	void Update () {
-		
-	}
 }

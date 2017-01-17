@@ -10,7 +10,7 @@ using UnityEngine.UI;
 public class HololensPane : MonoBehaviour {
 
     public InputField IPField;
-    public TabLogic tab;
+    public HololensTab tab;
     private HololensAvatarLogic linkedHololens;
     public static string HololensAppId = "HoloHand-Lens_pzq3xp76mxafg!App";
     public static string HololensPackageName = "HoloHand-Lens_1.0.0.0_x86__pzq3xp76mxafg";
@@ -19,6 +19,12 @@ public class HololensPane : MonoBehaviour {
     public Slider BatterySlider;
     public Text Title;
     public Dropdown StateSelection;
+    private bool _changingState = false;
+
+    public enum Warning
+    {
+        UnresponsiveAPI
+    }
     
     public string ID
     {
@@ -105,7 +111,8 @@ public class HololensPane : MonoBehaviour {
     private void setConnectedToServer(bool connected)
     {
         ConnectedToServerToggle.isOn = connected;
-        //TODO: icon in tab?
+        //hide/show icon in overview screen
+        tab.SetConnected(connected);
     }
 
     public void linkHololens(HololensAvatarLogic hololens)
@@ -142,9 +149,10 @@ public class HololensPane : MonoBehaviour {
 
     public void SetState()
     {
-        Debug.Log("[HololensPane:SetState] setting state to " + StateSelection.value);
-        if (hasLinkedHololens())
+        Debug.Log("[HololensPane:SetState] triggered");
+        if ((!_changingState) && hasLinkedHololens())
         {
+            Debug.Log("[HololensPane:SetState] setting state to " + StateSelection.value);
             MobileAvatarLogic.myself.CmdChangeClientState(linkedHololens.netId, StateSelection.value);
         }
     }
@@ -157,7 +165,8 @@ public class HololensPane : MonoBehaviour {
     private void setBatteryLevel(BatteryResponse data)
     {
         BatterySlider.value = data.GetRemainingCharge();
-        //TODO: warning on tab if too low
+        //show charge on overview screen
+        tab.SetCharge(data.GetRemainingCharge());
     }
 
     public void queryStatus()
@@ -391,14 +400,20 @@ public class HololensPane : MonoBehaviour {
         {
             if (StateSelection.value != linkedHololens.StateIndex)
             {
-                //disable callbacks for this call
-                Dropdown.DropdownEvent backup = StateSelection.onValueChanged;
-                StateSelection.onValueChanged = new Dropdown.DropdownEvent();
-                //change the value
+                Debug.Log("[HololensPane:Update] lens changed state to " + linkedHololens.StateIndex);
+                _changingState = true;
                 StateSelection.value = linkedHololens.StateIndex;
-                StateSelection.RefreshShownValue();
-                //restore callbacks
-                StateSelection.onValueChanged = backup;
+                _changingState = false;
+                Debug.Log("[HololensPane:Update] updated lens state");
+
+                ////disable callbacks for this call
+                //Dropdown.DropdownEvent backup = StateSelection.onValueChanged;
+                //StateSelection.onValueChanged = new Dropdown.DropdownEvent();
+                ////change the value
+                //StateSelection.value = linkedHololens.StateIndex;
+                //StateSelection.RefreshShownValue();
+                ////restore callbacks
+                //StateSelection.onValueChanged = backup;
             }
         }
 	}

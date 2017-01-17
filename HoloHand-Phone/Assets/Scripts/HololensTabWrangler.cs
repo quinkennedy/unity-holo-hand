@@ -67,7 +67,7 @@ public class HololensTabWrangler : MonoBehaviour {
                 tabPrefab, 
                 transform.Find("ContentPanel").Find("OverviewPane"), 
                 false);
-        TabLogic tab = tabGO.GetComponent<TabLogic>();
+        HololensTab tab = tabGO.GetComponent<HololensTab>();
         GameObject paneGO = 
             GameObject.Instantiate(
                 hololensPanePrefab, 

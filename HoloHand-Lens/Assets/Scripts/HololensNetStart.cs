@@ -49,7 +49,7 @@ public class HololensNetStart : INetStartLogic
             return false;
         }
         //return (HololensConfig.instance != null);
-        }
+    }
 
     public override void StartNetwork()
     {

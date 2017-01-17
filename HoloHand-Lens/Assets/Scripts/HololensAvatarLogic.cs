@@ -222,7 +222,7 @@ public class HololensAvatarLogic : NetworkBehaviour {
     
     public void CommandNext()
     {
-        if (StateIndex == 5)
+        if (StateIndex >= 4)
         {
             CmdSetStateIndex(0);
         }
@@ -234,9 +234,9 @@ public class HololensAvatarLogic : NetworkBehaviour {
     
     public void CommandPrevious()
     {
-        if (StateIndex == 0)
+        if (StateIndex <= 0)
         {
-            CmdSetStateIndex(5);
+            CmdSetStateIndex(4);
         } else
         {
             CmdSetStateIndex(StateIndex--);

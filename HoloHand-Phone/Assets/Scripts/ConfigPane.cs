@@ -8,7 +8,8 @@ public class ConfigPane : MonoBehaviour {
 
     public List<Text> authPlaceholderText;
     public InputField ServerIP;
-    public InputField HLUser, HLPass;
+    public InputField HLUserField, HLPassField;
+    public InputField PkgNameField, AppIdField;
     public Toggle ServerConnectedToggle;
     public static ConfigPane instance;
     private bool _needConfig = true;
@@ -17,6 +18,28 @@ public class ConfigPane : MonoBehaviour {
         get
         {
             return _needConfig;
+        }
+    }
+    public string PackageName
+    {
+        get
+        {
+            return PkgNameField.text;
+        }
+        set
+        {
+            PkgNameField.text = value;
+        }
+    }
+    public string AppId
+    {
+        get
+        {
+            return AppIdField.text;
+        }
+        set
+        {
+            AppIdField.text = value;
         }
     }
 
@@ -47,6 +70,21 @@ public class ConfigPane : MonoBehaviour {
             }
             //and bring the overview to front
             GetComponent<RectTransform>().SetAsFirstSibling();
+        }
+
+        if (PlayerPrefs.HasKey("hlPkgName"))
+        {
+            PackageName = PlayerPrefs.GetString("hlPkgName");
+        } else
+        {
+            PackageName = "HoloHand-Lens";
+        }
+        if (PlayerPrefs.HasKey("hlAppId"))
+        {
+            AppId = PlayerPrefs.GetString("hlAppId");
+        } else
+        {
+            AppId = "App";
         }
 	}
 
@@ -79,6 +117,13 @@ public class ConfigPane : MonoBehaviour {
         PlayerPrefs.Save();
     }
 
+    public void SavePkgAppData()
+    {
+        PlayerPrefs.SetString("hlPkgName", PackageName);
+        PlayerPrefs.SetString("hlAppId", AppId);
+        PlayerPrefs.Save();
+    }
+
     private static string authenticate(string username, string password)
     {
         string auth = username + ":" + password;
@@ -91,9 +136,13 @@ public class ConfigPane : MonoBehaviour {
     public void SetHololensLogin()
     {
         Debug.Log("[ConfigPane.SetHololensLogin] set login");
-        string auth = authenticate(HLUser.text, HLPass.text);
-        HLUser.text = "";
-        HLPass.text = "";
+        string auth = authenticate(HLUserField.text, HLPassField.text);
+        foreach (Text pt in authPlaceholderText)
+        {
+            pt.text = "Loaded";
+        }
+        HLUserField.text = "";
+        HLPassField.text = "";
 
         PlayerPrefs.SetString("hlAuth", auth);
         PlayerPrefs.Save();
