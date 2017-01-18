@@ -22,12 +22,14 @@ public class HololensPane : MonoBehaviour {
     public Dropdown StateSelection;
     public Dropdown ThermalState;
     public Image ThermalBG;
+    public Text WarningOutput = null;
     private bool _changingState = false;
     private bool _apiErrors = false;
+    private WarningBucket warnings;
 
     public enum Warning
     {
-        UnresponsiveAPI
+        API, Battery, Package
     }
     
     public string ID
@@ -80,6 +82,7 @@ public class HololensPane : MonoBehaviour {
 	void Start ()
     {
         InvokeRepeating("queryStatus", 1, 60);
+        warnings = new WarningBucket(WarningOutput, tab.WarningImage);
     }
 
     public void DeleteClicked()
@@ -172,6 +175,20 @@ public class HololensPane : MonoBehaviour {
         BatterySlider.value = data.GetRemainingCharge();
         //show charge on overview screen
         tab.SetCharge(data.GetRemainingCharge());
+        tab.SetPlugged(data.Charging > 0);
+        if (data.GetRemainingCharge() <= tab.lowLevel && data.Charging == 0)
+        {
+            warnings.addWarning(Warning.Battery, "plug in device");
+        } else
+        {
+            warnings.removeWarning(Warning.Battery);
+        }
+    }
+
+    public void manualQueryStatus()
+    {
+        warnings.removeWarning(Warning.API);
+        queryStatus();
     }
 
     public void queryStatus()
@@ -276,8 +293,10 @@ public class HololensPane : MonoBehaviour {
                 if (matched)
                 {
                     StartCoroutine(coGetRunningProcesses(auth));
+                    warnings.removeWarning(Warning.Package);
                 } else {
                     Debug.Log("[HololensPane:coGetPackageList] didn't find app: " + res.downloadHandler.text);
+                    warnings.addWarning(Warning.Package, "package not found");
                 }
             });
     }
@@ -344,43 +363,49 @@ public class HololensPane : MonoBehaviour {
     public IEnumerator coGetResponse(
         UnityWebRequest req, string auth, ResponseHandler handler)
     {
-        req.SetRequestHeader("AUTHORIZATION", auth);
-        Debug.Log("[HololensPane:coSendWithoutResponse] request to " + req.url);
-        yield return req.Send();
-        if (req.downloadHandler != null)
+        if (!warnings.hasWarning(Warning.API))
         {
-            while (!req.downloadHandler.isDone)
+            req.SetRequestHeader("AUTHORIZATION", auth);
+            Debug.Log("[HololensPane:coSendWithoutResponse] request to " + req.url);
+            yield return req.Send();
+            if (req.downloadHandler != null)
             {
-                yield return new WaitForEndOfFrame();
+                while (!req.downloadHandler.isDone)
+                {
+                    yield return new WaitForEndOfFrame();
+                }
             }
-        } else
-        {
-            while (!req.isDone)
+            else
             {
-                yield return new WaitForEndOfFrame();
+                while (!req.isDone)
+                {
+                    yield return new WaitForEndOfFrame();
+                }
             }
-        }
 
-        if (req.isError)
-        {
-            Debug.LogWarning(
-                "[HololensPane:coSendWithoutResponse] error: " + req.error);
-        }
-        else
-        {
-            if (req.responseCode == 200)
+            if (req.isError)
             {
-                Debug.Log("[HololensPane:coGetResponse] success from " + req.url);
-            } else
-            {
-                Debug.LogWarning("[HololensPane:coGetResponse] code " + req.responseCode + " from " + req.url);
-                //TODO: limit queries or notify user based on return code
-                //code 401 for wrong auth - set warning and prompt user to set auth. Wait for "sync API"
-                //code 343 for temporarily blocked IP (due to repeated bad access attempts) - set warning. Wait for "sync API"
-                //code 307 redirect to https if https is forced - set warning and prompt user to change security settings. Wait for "sync API"
+                Debug.LogWarning(
+                    "[HololensPane:coSendWithoutResponse] error: " + req.error);
             }
+            else
+            {
+                if (req.responseCode >= 200 && req.responseCode < 300)
+                {
+                    Debug.Log("[HololensPane:coGetResponse] success from " + req.url);
+                }
+                else
+                {
+                    Debug.LogWarning("[HololensPane:coGetResponse] code " + req.responseCode + " from " + req.url);
+                    warnings.addWarning(Warning.API, "API response " + req.responseCode);
+                    //TODO: limit queries or notify user based on return code
+                    //code 401 for wrong auth - set warning and prompt user to set auth. Wait for "sync API"
+                    //code 343 for temporarily blocked IP (due to repeated bad access attempts) - set warning. Wait for "sync API"
+                    //code 307 redirect to https if https is forced - set warning and prompt user to change security settings. Wait for "sync API"
+                }
+            }
+            handler(req);
         }
-        handler(req);
     }
 
     public void debugResponse(UnityWebRequest res)

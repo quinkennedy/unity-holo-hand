@@ -7,6 +7,7 @@ public class TabLogic : MonoBehaviour {
 
     public GameObject pane;
     public Text TitleText;
+    public Image ConnectedImage, WarningImage;
 
     public string Title
     {
@@ -18,6 +19,16 @@ public class TabLogic : MonoBehaviour {
         {
             TitleText.text = value;
         }
+    }
+
+    public void SetConnected(bool connected)
+    {
+        ConnectedImage.enabled = connected;
+    }
+
+    public void SetWarning(bool warning)
+    {
+        WarningImage.enabled = warning;
     }
 
     void Start()

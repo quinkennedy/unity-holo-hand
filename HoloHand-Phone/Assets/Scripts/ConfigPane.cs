@@ -12,7 +12,10 @@ public class ConfigPane : MonoBehaviour {
     public InputField PkgNameField, AppIdField;
     public Toggle ServerConnectedToggle;
     public static ConfigPane instance;
+    public TabLogic configTab;
+    public Text WarningOutput;
     private bool _needConfig = true;
+    WarningBucket warnings;
     public bool needConfig
     {
         get
@@ -43,10 +46,16 @@ public class ConfigPane : MonoBehaviour {
         }
     }
 
+    public enum Warning
+    {
+        Auth, Server
+    }
+
 	// Use this for initialization
 	void Start ()
     {
         instance = this;
+        warnings = new WarningBucket(WarningOutput, configTab.WarningImage);
         bool setIP = false;
         if (PlayerPrefs.HasKey("serverIP"))
         {
@@ -70,6 +79,9 @@ public class ConfigPane : MonoBehaviour {
             }
             //and bring the overview to front
             GetComponent<RectTransform>().SetAsFirstSibling();
+        } else
+        {
+            warnings.addWarning(Warning.Auth, "enter authication credentials");
         }
 
         if (PlayerPrefs.HasKey("hlPkgName"))
@@ -92,12 +104,14 @@ public class ConfigPane : MonoBehaviour {
     {
         Debug.Log("[ConfigPane:OnConnectedToServer]");
         ServerConnectedToggle.isOn = true;
+        configTab.SetConnected(true);
     }
 
     public void OnDisconnectedFromServer()
     {
         Debug.Log("[ConfigPane:OnDisconnectedFromServer]");
         ServerConnectedToggle.isOn = false;
+        configTab.SetConnected(false);
     }
 
     public void OnDisconnectedFromServer(NetworkDisconnection info)
@@ -143,6 +157,7 @@ public class ConfigPane : MonoBehaviour {
         }
         HLUserField.text = "";
         HLPassField.text = "";
+        warnings.removeWarning(Warning.Auth);
 
         PlayerPrefs.SetString("hlAuth", auth);
         PlayerPrefs.Save();

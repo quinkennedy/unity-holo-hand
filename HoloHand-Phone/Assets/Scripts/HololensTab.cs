@@ -7,7 +7,7 @@ public class HololensTab : TabLogic {
 
     public RectTransform chargeRect;
     public Image chargeImg;
-    public Image WarningImage, ConnectedImage;
+    public Image PluggedImage;
     public Color BatteryOK, BatteryLow;
     public float lowLevel = 0.25f;
 
@@ -18,13 +18,8 @@ public class HololensTab : TabLogic {
         chargeImg.color = (amt <= lowLevel ? BatteryLow : BatteryOK);
     }
 
-    public void SetConnected(bool connected)
+    public void SetPlugged(bool pluggedIn)
     {
-        ConnectedImage.enabled = connected;
-    }
-
-    public void SetWarning(bool warning)
-    {
-        WarningImage.enabled = warning;
+        PluggedImage.enabled = pluggedIn;
     }
 }
