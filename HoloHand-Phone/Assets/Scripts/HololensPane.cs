@@ -12,14 +12,18 @@ public class HololensPane : MonoBehaviour {
     public InputField IPField;
     public HololensTab tab;
     private HololensAvatarLogic linkedHololens;
-    public static string HololensAppId = "HoloHand-Lens_pzq3xp76mxafg!App";
-    public static string HololensPackageName = "HoloHand-Lens_1.0.0.0_x86__pzq3xp76mxafg";
+    public static string HololensAppId = null;// = "HoloHand-Lens_pzq3xp76mxafg!App";
+    public static string HololensPackageName = null;// = "HoloHand-Lens_1.0.0.0_x86__pzq3xp76mxafg";
+    //UTF8, ASCII, and ISO-8859-1 encodings all work
     public Toggle ConnectedToServerToggle;
     public Toggle AppRunningToggle;
     public Slider BatterySlider;
     public Text Title;
     public Dropdown StateSelection;
+    public Dropdown ThermalState;
+    public Image ThermalBG;
     private bool _changingState = false;
+    private bool _apiErrors = false;
 
     public enum Warning
     {
@@ -76,7 +80,7 @@ public class HololensPane : MonoBehaviour {
 	void Start ()
     {
         InvokeRepeating("queryStatus", 1, 60);
-	}
+    }
 
     public void DeleteClicked()
     {
@@ -133,6 +137,7 @@ public class HololensPane : MonoBehaviour {
     {
         linkedHololens = null;
         setConnectedToServer(false);
+        RefocusApp();
     }
 
     public void StatesChanged(string[] states)
@@ -174,8 +179,14 @@ public class HololensPane : MonoBehaviour {
         if (PlayerPrefs.HasKey("hlAuth"))
         {
             String auth = getAuth();
+            if (string.IsNullOrEmpty(HololensPackageName))
+            {
+                StartCoroutine(coGetPackageList(auth));
+            } else
+            {
+                StartCoroutine(coGetRunningProcesses(auth));
+            }
             StartCoroutine(coGetBatteryCharge(auth));
-            StartCoroutine(coGetRunningProcesses(auth));
             StartCoroutine(coGetThermalState(auth));
         }
         else
@@ -196,10 +207,18 @@ public class HololensPane : MonoBehaviour {
         StartCoroutine(coPostWithoutResponse("/api/control/shutdown", auth));
     }
 
+    private void RefocusApp()
+    {
+        String auth = getAuth();
+        string appID = Hex64Encode(HololensAppId); //"SG9sb0hhbmQtTGVuc19wenEzeHA3Nm14YWZnIUFwcA==";// WWW.EscapeURL();// 
+        string packageName = Hex64Encode(HololensPackageName); //"SG9sb0hhbmQtTGVuc18xLjAuMC4wX3g4Nl9fcHpxM3hwNzZteGFmZw==";// WWW.EscapeURL();// 
+        StartCoroutine(coRefocusApp(auth, appID, packageName));
+    }
+
     public static string Base64Encode(string s)
     {
         return System.Convert.ToBase64String(
-            System.Text.Encoding.GetEncoding("ISO-8859-1").GetBytes(s));
+            System.Text.Encoding.UTF8.GetBytes(s));
     }
 
     public static string Hex64Encode(string s)
@@ -215,16 +234,52 @@ public class HololensPane : MonoBehaviour {
     public void RestartApp()
     {
         string auth = getAuth();
-        string appID = "SG9sb0hhbmQtTGVuc19wenEzeHA3Nm14YWZnIUFwcA==";// WWW.EscapeURL();// Hex64Encode(HololensAppId));
-        string packageName = "SG9sb0hhbmQtTGVuc18xLjAuMC4wX3g4Nl9fcHpxM3hwNzZteGFmZw==";// WWW.EscapeURL();// Hex64Encode(HololensPackageName));
+        string appID = Hex64Encode(HololensAppId); //"SG9sb0hhbmQtTGVuc19wenEzeHA3Nm14YWZnIUFwcA==";// WWW.EscapeURL();// 
+        string packageName = Hex64Encode(HololensPackageName); //"SG9sb0hhbmQtTGVuc18xLjAuMC4wX3g4Nl9fcHpxM3hwNzZteGFmZw==";// WWW.EscapeURL();// 
         StartCoroutine(coRestartApp(auth, appID, packageName));
     }
 
     public void ShutdownApp()
     {
         string auth = getAuth();
-        string packageName = WWW.EscapeURL("SG9sb0hhbmQtTGVuc18xLjAuMC4wX3g4Nl9fcHpxM3hwNzZteGFmZw==");// Hex64Encode(HololensPackageName));
+        string packageName = Hex64Encode(HololensPackageName); //WWW.EscapeURL("SG9sb0hhbmQtTGVuc18xLjAuMC4wX3g4Nl9fcHpxM3hwNzZteGFmZw==");// 
         StartCoroutine(coShutdownApp(auth, packageName));
+    }
+
+    public IEnumerator coGetPackageList(string auth)
+    {
+        string endpoint = "/api/app/packagemanager/packages";
+        string address = "http://" + IP + endpoint;
+
+        yield return coGetResponse(
+            UnityWebRequest.Get(address),
+            auth,
+            (res) =>
+            {
+                InstalledPackagesResponse parsed =
+                    InstalledPackagesResponse.CreateFromJSON(res.downloadHandler.text);
+                //search for package that matches
+                bool matched = false;
+                foreach(InstalledPackagesResponse.Package package in parsed.InstalledPackages)
+                {
+                    if (package.PackageFamilyName.ToLower().Equals(ConfigPane.instance.PackageName.ToLower()))
+                    {
+                        HololensPackageName = package.PackageFullName;
+                        HololensAppId = package.PackageRelativeId;
+                        Debug.Log("[HololensPane:coGetPackageList] found family name match");
+                        Debug.Log("[HololensPane:coGetPackageList] pkg/app: " + HololensPackageName + " / " + HololensAppId);
+                        matched = true;
+                        break;
+                    }
+                }
+
+                if (matched)
+                {
+                    StartCoroutine(coGetRunningProcesses(auth));
+                } else {
+                    Debug.Log("[HololensPane:coGetPackageList] didn't find app: " + res.downloadHandler.text);
+                }
+            });
     }
 
     public IEnumerator coRestartApp(
@@ -240,6 +295,20 @@ public class HololensPane : MonoBehaviour {
         yield return coGetRunningProcesses(auth);
     }
 
+    public IEnumerator coRefocusApp(
+        string auth, string encodedAppId, string encodedPackageName)
+    {
+        yield return coGetRunningProcesses(auth);
+        if (IsAppRunning)
+        {
+            Debug.Log("[HololensPane:coRefocusApp] app running in background, sending start message to push it to front");
+            yield return coStartApp(auth, encodedAppId, encodedPackageName);
+        } else
+        {
+            Debug.Log("[HololensPane:coRefocusApp] app not running, keep it off");
+        }
+    }
+
     public IEnumerator coShutdownApp(string auth, string encodedPackageName)
     {
         string endpoint = "/api/taskmanager/app";
@@ -252,7 +321,7 @@ public class HololensPane : MonoBehaviour {
         yield return coGetResponse(
             UnityWebRequest.Delete(Address + query), 
             auth,
-            debugResponse);
+            (res) => { });
         yield return new WaitForSeconds(10);
         yield return coGetRunningProcesses(auth);
     }
@@ -269,7 +338,7 @@ public class HololensPane : MonoBehaviour {
         return coGetResponse(
             UnityWebRequest.Post(Address + query, ""),
             auth,
-            debugResponse);
+            (res) => { });
     }
 
     public IEnumerator coGetResponse(
@@ -299,8 +368,17 @@ public class HololensPane : MonoBehaviour {
         }
         else
         {
-            Debug.Log(
-                "[HololensPane:coSendWithoutResponse] success from " + req.url);
+            if (req.responseCode == 200)
+            {
+                Debug.Log("[HololensPane:coGetResponse] success from " + req.url);
+            } else
+            {
+                Debug.LogWarning("[HololensPane:coGetResponse] code " + req.responseCode + " from " + req.url);
+                //TODO: limit queries or notify user based on return code
+                //code 401 for wrong auth - set warning and prompt user to set auth. Wait for "sync API"
+                //code 343 for temporarily blocked IP (due to repeated bad access attempts) - set warning. Wait for "sync API"
+                //code 307 redirect to https if https is forced - set warning and prompt user to change security settings. Wait for "sync API"
+            }
         }
         handler(req);
     }
@@ -343,7 +421,15 @@ public class HololensPane : MonoBehaviour {
         return coGetResponse(req, auth, (res) =>
         {
             ThermalStageResponse parsed = 
-                ThermalStageResponse.CreateFromJSON(req.downloadHandler.text);
+                ThermalStageResponse.CreateFromJSON(res.downloadHandler.text);
+            ThermalState.value = parsed.CurrentStage - 1;
+            if (parsed.CurrentStage >= 3)
+            {
+                ThermalBG.color = Color.red;
+            } else
+            {
+                ThermalBG.color = Color.white;
+            }
         });
     }
 
@@ -358,15 +444,15 @@ public class HololensPane : MonoBehaviour {
         {
             RunningProcessesResponse parsed =
                    RunningProcessesResponse.CreateFromJSON(
-                       req.downloadHandler.text);
+                       res.downloadHandler.text);
             bool found = false;
             foreach(RunningProcessesResponse.Process process in parsed.Processes)
             {
-                if (process.ImageName.ToLower().Equals("holohand-lens.exe"))
+                if (process.ImageName.ToLower().StartsWith(ConfigPane.instance.PackageName.ToLower()))
                 {
                     Debug.Log(
-                        "[HololensPane:coGetRunningProcesses]"+
-                        " holohand-lens is running");
+                        "[HololensPane:coGetRunningProcesses] "+
+                        ConfigPane.instance.PackageName + " is running");
                     found = true;
                     break;
                 }
@@ -389,7 +475,7 @@ public class HololensPane : MonoBehaviour {
         return coGetResponse(req, auth, (res) =>
         {
             BatteryResponse parsed =
-                BatteryResponse.CreateFromJSON(req.downloadHandler.text);
+                BatteryResponse.CreateFromJSON(res.downloadHandler.text);
             setBatteryLevel(parsed);
         });
     }
