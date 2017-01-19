@@ -277,9 +277,11 @@ public class HololensPane : MonoBehaviour {
                     InstalledPackagesResponse.CreateFromJSON(res.downloadHandler.text);
                 //search for package that matches
                 bool matched = false;
-                foreach(InstalledPackagesResponse.Package package in parsed.InstalledPackages)
+                string compareTo = ConfigPane.instance.PackageName.ToLower();
+                foreach (InstalledPackagesResponse.Package package in parsed.InstalledPackages)
                 {
-                    if (package.PackageFamilyName.ToLower().Equals(ConfigPane.instance.PackageName.ToLower()))
+                    if (package.Name.ToLower().Equals(compareTo) || 
+                        package.PackageFamilyName.ToLower().Equals(compareTo))
                     {
                         HololensPackageName = package.PackageFullName;
                         HololensAppId = package.PackageRelativeId;

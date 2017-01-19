@@ -5,7 +5,8 @@ using UnityEngine.Networking;
 public class MobileAvatarLogic : NetworkBehaviour {
     public static MobileAvatarLogic myself;
 
-#if UNITY_ANDROID
+#if UNITY_ANDROID || DOCENT_UI
+    //TODO: a better way to support Android and Standalone
     private bool _localPlayer;
     // Use this for initialization
     void Start ()

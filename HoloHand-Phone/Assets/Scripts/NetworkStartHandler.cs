@@ -42,10 +42,10 @@ public class NetworkStartHandler : MonoBehaviour {
     {
 #if UNITY_WSA_10_0
         NetworkManager.singleton.playerPrefab = hololensPrefab;
+#elif UNITY_ANDROID || DOCENT_UI
+        NetworkManager.singleton.playerPrefab = mobilePrefab;
 #elif UNITY_STANDALONE
         NetworkManager.singleton.playerPrefab = kinectPrefab;
-#elif UNITY_ANDROID
-        NetworkManager.singleton.playerPrefab = mobilePrefab;
 #endif
     }
 
@@ -53,10 +53,10 @@ public class NetworkStartHandler : MonoBehaviour {
     {
 #if UNITY_WSA_10_0
         startLogic = new HololensNetStart();
+#elif UNITY_ANDROID || DOCENT_UI
+        startLogic = new DocentNetStart();
 #elif UNITY_STANDALONE
         startLogic = new KinectNetStart();
-#elif UNITY_ANDROID
-        startLogic = new DocentNetStart();
 #endif
     }
 

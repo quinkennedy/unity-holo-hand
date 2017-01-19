@@ -105,7 +105,8 @@ public class HololensAvatarLogic : NetworkBehaviour {
             GameObject wrapper = new GameObject("RemoteLensWrapper");
             transform.SetParent(wrapper.transform);
         }
-#elif UNITY_ANDROID
+#elif UNITY_ANDROID || DOCENT_UI
+        //TODO: figure out how a different way to do this in Android & Standalone
         Debug.Log("[HololensAvatarLogic:Start] remote Hololens spawned on Android device");
         HololensTabWrangler.Instance.RegisterHololens(this);
 #endif
