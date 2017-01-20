@@ -18,6 +18,7 @@ public class HololensPane : MonoBehaviour {
     public Toggle ConnectedToServerToggle;
     public Toggle AppRunningToggle;
     public Slider BatterySlider;
+    public Text BatteryText;
     public Text Title;
     public Dropdown StateSelection;
     public Dropdown ThermalState;
@@ -173,6 +174,7 @@ public class HololensPane : MonoBehaviour {
     private void setBatteryLevel(BatteryResponse data)
     {
         BatterySlider.value = data.GetRemainingCharge();
+        BatteryText.text = ((int)(data.GetRemainingCharge() * 100)) + "%";
         //show charge on overview screen
         tab.SetCharge(data.GetRemainingCharge());
         tab.SetPlugged(data.Charging > 0);
