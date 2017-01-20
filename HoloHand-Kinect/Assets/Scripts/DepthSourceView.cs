@@ -10,6 +10,7 @@ public class DepthSourceView : MonoBehaviour
     public GameObject DepthSourceManager;
     public BoxCollider boxBounds;
     public Material buttonMaterial;
+    public float closestDistance = 0.40f;
 
     //the distance around the "furthest point" to gather "hand" points from
     // used in populating FurthestPointBucket.furthestPoints
@@ -178,10 +179,24 @@ public class DepthSourceView : MonoBehaviour
             }
 
             //get the currently active HoloLens position in plan view
+            //also set button index based on current state
             Vector2 HMDposition = Vector2.zero;
+            int activeButton = -1;
             if (KinectRegistration.closestHMD != null)
             {
                 HMDposition = new Vector2(KinectRegistration.closestHMD.position.x, KinectRegistration.closestHMD.position.z);
+                switch (KinectRegistration.closestHMD.parent.GetComponent<HololensAvatarLogic>().StateIndex)
+                {
+                    case 1:
+                        activeButton = 0;
+                        break;
+                    case 5:
+                        activeButton = 1;
+                        break;
+                    default:
+                        activeButton = -1;
+                        break;
+                }
             }
 
             //
@@ -214,31 +229,36 @@ public class DepthSourceView : MonoBehaviour
                             //if the point is in one of the buttons
                             if (PointInOABB(vL, button))
                             {
-                                pointsInButton[j].Add(vL);
-                                ////count it
-                                //pointBucket[j].numPoints++;
-                                ////add all points in the button to the "furthestPoints" list
-                                //// we will filter this list later
-                                //pointBucket[j].furthestPoints.Add(vL);
-
-                                //keep tabs on which individual point is furthest (in plan view) from the HoloLens
                                 /**
                                  * distance in plan view (x,z) relative to currently active HoloLens
                                  */
                                 float currDistance = Vector2.Distance(HMDposition, new Vector2(vL.x, vL.z));
-                                //track the overall furthest point...
-                                if (currDistance > pointBucket[j].maxDistance)
+                                //if the point is far enough away from the HMD
+                                // this helps with filtering out shoulders
+                                if (currDistance > closestDistance)
                                 {
-                                    pointBucket[j].furthestPoint = vL;
-                                    pointBucket[j].maxDistance = currDistance;
-                                }
-                                //as well as the furthest point inside the current Region Of Interest
-                                if (!float.IsPositiveInfinity(roiRadius) &&
-                                    currDistance > roiBucket[j].maxDistance &&
-                                    Vector3.Distance(vL, roiCenter) <= roiRadius)
-                                {
-                                    roiBucket[j].furthestPoint = vL;
-                                    roiBucket[j].maxDistance = currDistance;
+                                    pointsInButton[j].Add(vL);
+                                    ////count it
+                                    //pointBucket[j].numPoints++;
+                                    ////add all points in the button to the "furthestPoints" list
+                                    //// we will filter this list later
+                                    //pointBucket[j].furthestPoints.Add(vL);
+
+                                    //keep tabs on which individual point is furthest (in plan view) from the HoloLens
+                                    //track the overall furthest point...
+                                    if (currDistance > pointBucket[j].maxDistance)
+                                    {
+                                        pointBucket[j].furthestPoint = vL;
+                                        pointBucket[j].maxDistance = currDistance;
+                                    }
+                                    //as well as the furthest point inside the current Region Of Interest
+                                    if (!float.IsPositiveInfinity(roiRadius) &&
+                                        currDistance > roiBucket[j].maxDistance &&
+                                        Vector3.Distance(vL, roiCenter) <= roiRadius)
+                                    {
+                                        roiBucket[j].furthestPoint = vL;
+                                        roiBucket[j].maxDistance = currDistance;
+                                    }
                                 }
                                 break;
                             }
@@ -287,15 +307,23 @@ public class DepthSourceView : MonoBehaviour
             //Vector3 pos = _Collider.gameObject.transform.localPosition;
             //_Collider.gameObject.transform.localPosition = pos;
 
-            //
-            //  Set reference point based the button with the most points in it
-            //first find which button has the most data in it
             int selectedButton = -1;
-            for(int i = 0; i < buttons.Count; i++)
+            //If we know what button to pay attention to, just use that one
+            if (activeButton != -1)
             {
-                if (selectedButton == -1 || pointsInButton[i].Count > pointsInButton[selectedButton].Count)
+                selectedButton = activeButton;
+            }
+            else
+            {
+                //
+                //  Set reference point based the button with the most points in it
+                //first find which button has the most data in it
+                for (int i = 0; i < buttons.Count; i++)
                 {
-                    selectedButton = i;
+                    if (selectedButton == -1 || pointsInButton[i].Count > pointsInButton[selectedButton].Count)
+                    {
+                        selectedButton = i;
+                    }
                 }
             }
             //now we actually filter what we think are "hand" points based on the furthest point

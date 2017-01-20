@@ -1,21 +1,21 @@
 [
 	{
-		"kinect_position": [ 0.0, 2.70, 0.0 ],
-		"kinect_rotation": [ 45.0, -180.0, 0.0 ],
-		"kinect_bounds_pos": [ 1.0, 1.2, -1.45 ],
-		"kinect_bounds_scale": [ 2.0, 2, 2.5 ],
+		"kinect_position": [ 0.0, 3.1, 0.0 ],
+		"kinect_rotation": [ 54.5, 168.5, 0.0 ],
+		"kinect_bounds_pos": [ -0.108, 1.2, -1.297 ],
+		"kinect_bounds_scale": [ 2.15, 2, 1.85 ],
 		"kinect_threshold": 1000,
-		"kinect_distance": 2.5,
+		"kinect_distance": 4,
 		"buttons": [
 			{
-				"pos": [ 0.5, 1.2, -0.5 ],
+				"pos": [ 0, 1.2, -0.74 ],
 				"scale": [ 0.7, 2, 0.7 ],
 				"rot": [ 0.0, 0.0, 0.0 ]
 			},
 			{
-				"pos": [ 1.2, 1.6, -1.5 ],
-				"scale": [ 0.8, 1.1, 0.8 ],
-				"rot": [ 0.0, 45.0, 0.0 ]
+				"pos": [ 0.543, 1.6, -1.808 ],
+				"scale": [ 0.8, 1.15, 0.8 ],
+				"rot": [ 0.0, 0.0, 0.0 ]
 			}
 		]
 	}
