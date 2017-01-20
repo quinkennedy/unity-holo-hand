@@ -23,7 +23,7 @@ public class KinectRegistration : MonoBehaviour {
             foreach (KinectCalibrationPlane plane in KinectCalibrationPlane.calibrationPlanes)
             {
                 Transform hmd = plane.getHMD();
-                if (plane.activeBounds.Contains(hmd.position))
+                if (plane.activeBounds.Contains(hmd.position))//DepthSourceView.PointInOABB(hmd.position, plane.activeBounds))// 
                 {
                     activeHMD = hmd;
                     transform.position = plane.transform.position;

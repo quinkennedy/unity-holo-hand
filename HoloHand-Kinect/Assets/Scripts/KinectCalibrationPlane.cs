@@ -7,7 +7,14 @@ public class KinectCalibrationPlane : MonoBehaviour {
 
     public static List<KinectCalibrationPlane> calibrationPlanes;
     private GameObject HMD;
-    public Bounds activeBounds;
+    private Bounds _activeBounds;
+    public Bounds activeBounds
+    {
+        get
+        {
+            return _activeBounds;
+        }
+    }
 
 #if UNITY_WSA_10_0
     private bool Placing = false;
@@ -33,6 +40,7 @@ public class KinectCalibrationPlane : MonoBehaviour {
         activeBox.transform.localPosition = KinectDebug.configuration.HMD_active_area.position;
         activeBox.transform.localRotation = Quaternion.Euler(KinectDebug.configuration.HMD_active_area.rotation);
         activeBox.transform.localScale = KinectDebug.configuration.HMD_active_area.scale;
+        _activeBounds = activeBox.GetComponent<BoxCollider>().bounds;
 #endif
 
     }

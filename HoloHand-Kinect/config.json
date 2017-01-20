@@ -4,6 +4,11 @@
 		"kinect_rotation": [ 54.5, 168.5, 0.0 ],
 		"kinect_bounds_pos": [ 0.136, 1.2, -1.564 ],
 		"kinect_bounds_scale": [ 1.7, 2, 1.4 ],
+		"hmd_active_area": {
+			"pos": [ 0.543, 1.5, -1.808 ],
+			"scale": [4, 3.1 ,4],
+			"rot": [0, 0, 0]
+		},
 		"kinect_threshold": 1000,
 		"kinect_distance": 4,
 		"buttons": [

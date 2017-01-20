@@ -47,6 +47,23 @@ public class KinectConfig
         }
     }
 
+    private Box parseBox(JSONObject box)
+    {
+        List<JSONObject> jPos = box["pos"].list;
+        Vector3 pos = new Vector3(float.Parse(jPos[0].ToString()),
+                                  float.Parse(jPos[1].ToString()),
+                                  float.Parse(jPos[2].ToString()));
+        List<JSONObject> jScale = box["scale"].list;
+        Vector3 scale = new Vector3(float.Parse(jScale[0].ToString()),
+                                    float.Parse(jScale[1].ToString()),
+                                    float.Parse(jScale[2].ToString()));
+        List<JSONObject> jRot = box["rot"].list;
+        Vector3 rot = new Vector3(float.Parse(jRot[0].ToString()),
+                                  float.Parse(jRot[1].ToString()),
+                                  float.Parse(jRot[2].ToString()));
+        return new global::KinectConfig.Box(pos, scale, rot);
+    }
+
     public void processConfig(string jsondata)
     {
         JSONObject obj = new JSONObject(jsondata);
@@ -79,22 +96,11 @@ public class KinectConfig
             List<JSONObject> jButtons = j["buttons"].list;
             for (int i = 0; i < jButtons.Count; i++)
             {
-                JSONObject button = jButtons[i];
-                List<JSONObject> jPos = button["pos"].list;
-                Vector3 pos = new Vector3(float.Parse(jPos[0].ToString()),
-                                          float.Parse(jPos[1].ToString()),
-                                          float.Parse(jPos[2].ToString()));
-                List<JSONObject> jScale = button["scale"].list;
-                Vector3 scale = new Vector3(float.Parse(jScale[0].ToString()),
-                                            float.Parse(jScale[1].ToString()),
-                                            float.Parse(jScale[2].ToString()));
-                List<JSONObject> jRot = button["rot"].list;
-                Vector3 rot = new Vector3(float.Parse(jRot[0].ToString()),
-                                          float.Parse(jRot[1].ToString()),
-                                          float.Parse(jRot[2].ToString()));
-                buttons.Add(new global::KinectConfig.Box(pos, scale, rot));
+                buttons.Add(parseBox(jButtons[i]));
             }
         }
+
+        HMD_active_area = parseBox(j["hmd_active_area"]);
     }
 
 }

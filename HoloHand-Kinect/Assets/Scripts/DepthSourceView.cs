@@ -351,7 +351,7 @@ public class DepthSourceView : MonoBehaviour
         }
     }
 
-    bool PointInOABB(Vector3 point, BoxCollider box)
+    public static bool PointInOABB(Vector3 point, BoxCollider box)
     {
         //is point in a bounding box
         point = box.transform.InverseTransformPoint(point) - box.center;
