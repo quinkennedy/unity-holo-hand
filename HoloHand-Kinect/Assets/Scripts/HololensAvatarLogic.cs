@@ -31,6 +31,7 @@ public class HololensAvatarLogic : NetworkBehaviour {
     [Command]
     private void CmdSetStateIndex(int index)
     {
+        Debug.Log("[HololensAvatarLogic:CmdSetStateIndex] " + index);
         this.StateIndex = index;
     }
 

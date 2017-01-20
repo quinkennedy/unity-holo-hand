@@ -481,7 +481,7 @@ MonoBehaviour:
       m_TypeName: UnityEngine.Events.UnityEvent, UnityEngine, Version=0.0.0.0, Culture=neutral,
         PublicKeyToken=null
   - Keyword: next
-    KeyCode: 0
+    KeyCode: 110
     Response:
       m_PersistentCalls:
         m_Calls:
@@ -499,7 +499,7 @@ MonoBehaviour:
       m_TypeName: UnityEngine.Events.UnityEvent, UnityEngine, Version=0.0.0.0, Culture=neutral,
         PublicKeyToken=null
   - Keyword: back
-    KeyCode: 0
+    KeyCode: 98
     Response:
       m_PersistentCalls:
         m_Calls:
