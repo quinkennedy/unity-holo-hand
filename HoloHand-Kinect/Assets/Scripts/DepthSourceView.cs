@@ -32,7 +32,7 @@ public class DepthSourceView : MonoBehaviour
     {
     }
 
-    public void Init( Vector3 pos, Vector3 rot, float distance, List<Config.Box> buttons )
+    public void Init( Vector3 pos, Vector3 rot, float distance, List<KinectConfig.Box> buttons )
     {
         _Mesh = new Mesh();
         _Mesh.name = "DynamicKinectMesh";
@@ -53,13 +53,13 @@ public class DepthSourceView : MonoBehaviour
         transform.position = pos;
         transform.rotation = Quaternion.Euler(rot);
 
-        foreach(Config.Box buttonData in buttons)
+        foreach(KinectConfig.Box buttonData in buttons)
         {
             createButton(buttonData);
         }
     }
 
-    private void createButton(Config.Box buttonData)
+    private void createButton(KinectConfig.Box buttonData)
     {
         GameObject button = GameObject.CreatePrimitive(PrimitiveType.Cube);
         button.GetComponent<MeshRenderer>().enabled = true;
@@ -182,10 +182,10 @@ public class DepthSourceView : MonoBehaviour
             //also set button index based on current state
             Vector2 HMDposition = Vector2.zero;
             int activeButton = -1;
-            if (KinectRegistration.closestHMD != null)
+            if (KinectRegistration.activeHMD != null)
             {
-                HMDposition = new Vector2(KinectRegistration.closestHMD.position.x, KinectRegistration.closestHMD.position.z);
-                switch (KinectRegistration.closestHMD.parent.GetComponent<HololensAvatarLogic>().StateIndex)
+                HMDposition = new Vector2(KinectRegistration.activeHMD.position.x, KinectRegistration.activeHMD.position.z);
+                switch (KinectRegistration.activeHMD.parent.GetComponent<HololensAvatarLogic>().StateIndex)
                 {
                     case 1:
                         activeButton = 0;
@@ -221,7 +221,7 @@ public class DepthSourceView : MonoBehaviour
                     //if we have a registered HoloLens,
                     // find the furthest point in plan view
                     // that is inside one of the defined buttons
-                    if (KinectRegistration.closestHMD != null)
+                    if (KinectRegistration.activeHMD != null)
                     {
                         for (int j = 0; j < buttons.Count; j++)
                         {

@@ -3,7 +3,7 @@ using System.Collections;
 using System.IO;
 using System.Collections.Generic;
 
-public class Config
+public class KinectConfig
 {
 
     public struct Box
@@ -24,6 +24,7 @@ public class Config
     public Vector3 kinect_rot;
     public Vector3 kinect_bounds_pos;
     public Vector3 kinect_bounds_scale;
+    public Box HMD_active_area;
     public List<Box> buttons;
     
     public int depthTheshold = 3000;
@@ -31,7 +32,7 @@ public class Config
     public float depthDistance = 2.5f;
 
 
-    public Config( string path)
+    public KinectConfig( string path)
     {
         try
         {
@@ -91,7 +92,7 @@ public class Config
                 Vector3 rot = new Vector3(float.Parse(jRot[0].ToString()),
                                           float.Parse(jRot[1].ToString()),
                                           float.Parse(jRot[2].ToString()));
-                buttons.Add(new global::Config.Box(pos, scale, rot));
+                buttons.Add(new global::KinectConfig.Box(pos, scale, rot));
             }
         }
     }

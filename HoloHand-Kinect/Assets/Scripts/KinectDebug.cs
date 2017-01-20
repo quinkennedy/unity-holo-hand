@@ -3,7 +3,7 @@ using System.Collections;
 
 public class KinectDebug : MonoBehaviour {
 
-    Config configuration;
+    public static KinectConfig configuration;
 
     public DepthSourceView KinectDepth;
     private MovingAverage depthMeshTriangles;
@@ -16,7 +16,7 @@ public class KinectDebug : MonoBehaviour {
 
     // Use this for initialization
     void Awake () {
-        configuration = new Config("config.json");
+        configuration = new KinectConfig("config.json");
 
         KinectDepth.Init(configuration.kinect_pos, configuration.kinect_rot, configuration.depthDistance, configuration.buttons);
 

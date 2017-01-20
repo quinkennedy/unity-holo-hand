@@ -4,7 +4,8 @@ using UnityEngine;
 
 public class KinectRegistration : MonoBehaviour {
 
-    public static Transform closestHMD;
+    public static Transform activeHMD;
+    public KinectDebug kinect;
 
 	// Use this for initialization
 	void Start () {
@@ -17,23 +18,37 @@ public class KinectRegistration : MonoBehaviour {
             KinectCalibrationPlane.calibrationPlanes.Count > 0)
         {
 
-            //align the kinect with the closest HoloLens
-            KinectCalibrationPlane closestPlane = KinectCalibrationPlane.calibrationPlanes[0];
-            float HMDtoPlaneDistance, closestHMDtoPlaneDistance = closestPlane.getDistanceToHMD();
-            for (int i = 1; i < KinectCalibrationPlane.calibrationPlanes.Count; i++)
+            //select the Hololens which is inside the "active" zone
+            // relative to its calibration point
+            foreach (KinectCalibrationPlane plane in KinectCalibrationPlane.calibrationPlanes)
             {
-                HMDtoPlaneDistance = KinectCalibrationPlane.calibrationPlanes[i].getDistanceToHMD();
-                if (HMDtoPlaneDistance < closestHMDtoPlaneDistance)
+                Transform hmd = plane.getHMD();
+                if (plane.activeBounds.Contains(hmd.position))
                 {
-                    closestPlane = KinectCalibrationPlane.calibrationPlanes[i];
-                    closestHMDtoPlaneDistance = HMDtoPlaneDistance;
+                    activeHMD = hmd;
+                    transform.position = plane.transform.position;
+                    transform.rotation = plane.transform.rotation;
+                    break;
                 }
             }
 
-            closestHMD = closestPlane.getHMD();
+            ////align the kinect with the closest HoloLens
+            //KinectCalibrationPlane closestPlane = KinectCalibrationPlane.calibrationPlanes[0];
+            //float HMDtoPlaneDistance, closestHMDtoPlaneDistance = closestPlane.getDistanceToHMD();
+            //for (int i = 1; i < KinectCalibrationPlane.calibrationPlanes.Count; i++)
+            //{
+            //    HMDtoPlaneDistance = KinectCalibrationPlane.calibrationPlanes[i].getDistanceToHMD();
+            //    if (HMDtoPlaneDistance < closestHMDtoPlaneDistance)
+            //    {
+            //        closestPlane = KinectCalibrationPlane.calibrationPlanes[i];
+            //        closestHMDtoPlaneDistance = HMDtoPlaneDistance;
+            //    }
+            //}
 
-            transform.position = closestPlane.transform.position;
-            transform.rotation = closestPlane.transform.rotation;
+            //activeHMD = closestPlane.getHMD();
+
+            //transform.position = closestPlane.transform.position;
+            //transform.rotation = closestPlane.transform.rotation;
         }
 	}
 }

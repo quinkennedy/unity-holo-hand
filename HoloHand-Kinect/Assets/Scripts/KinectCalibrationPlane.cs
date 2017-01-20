@@ -7,6 +7,7 @@ public class KinectCalibrationPlane : MonoBehaviour {
 
     public static List<KinectCalibrationPlane> calibrationPlanes;
     private GameObject HMD;
+    public Bounds activeBounds;
 
 #if UNITY_WSA_10_0
     private bool Placing = false;
@@ -22,6 +23,17 @@ public class KinectCalibrationPlane : MonoBehaviour {
             calibrationPlanes = new List<KinectCalibrationPlane>();
         }
         calibrationPlanes.Add(this);
+
+#if UNITY_STANDALONE
+        //if this is the Kinect server, we want to add a bounding box for testing
+        // which Hololens is active
+        GameObject activeBox = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        activeBox.GetComponent<MeshRenderer>().enabled = false;
+        activeBox.transform.SetParent(transform, false);
+        activeBox.transform.localPosition = KinectDebug.configuration.HMD_active_area.position;
+        activeBox.transform.localRotation = Quaternion.Euler(KinectDebug.configuration.HMD_active_area.rotation);
+        activeBox.transform.localScale = KinectDebug.configuration.HMD_active_area.scale;
+#endif
 
     }
 

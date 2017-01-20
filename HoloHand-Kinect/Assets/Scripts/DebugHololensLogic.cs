@@ -6,7 +6,7 @@ public class DebugHololensLogic : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-        KinectRegistration.closestHMD = transform;
+        KinectRegistration.activeHMD = transform;
 	}
 	
 	// Update is called once per frame
