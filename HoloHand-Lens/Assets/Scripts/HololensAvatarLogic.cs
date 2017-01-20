@@ -222,24 +222,26 @@ public class HololensAvatarLogic : NetworkBehaviour {
     
     public void CommandNext()
     {
+        Debug.Log("[HololensAvatarLogic:CommandNext]");
         if (StateIndex >= 4)
         {
             CmdSetStateIndex(0);
         }
         else
         {
-            CmdSetStateIndex(StateIndex++);
+            CmdSetStateIndex(StateIndex + 1);
         }
     }
     
     public void CommandPrevious()
     {
+        Debug.Log("[HololensAvatarLogic:CommandPrevious]");
         if (StateIndex <= 0)
         {
             CmdSetStateIndex(4);
         } else
         {
-            CmdSetStateIndex(StateIndex--);
+            CmdSetStateIndex(StateIndex - 1);
         }
     }
 #endif
