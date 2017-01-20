@@ -396,9 +396,10 @@ PlayerSettings:
   metroCertificatePassword: 
   metroCertificateSubject: DefaultCompany
   metroCertificateIssuer: DefaultCompany
-  metroCertificateNotAfter: 0047956e4289d301
+  metroCertificateNotAfter: 80f2b1f67391d301
   metroApplicationDescription: HoloHand-Lens
-  wsaImages: {}
+  wsaImages:
+    2228374: Assets/Images/logosi-HoloHand-Lens.png
   metroTileShortName: HoloHand-Lens
   metroCommandLineArgsFile: 
   metroTileShowName: 0
