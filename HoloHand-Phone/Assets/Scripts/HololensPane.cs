@@ -19,6 +19,7 @@ public class HololensPane : MonoBehaviour {
     public Toggle AppRunningToggle;
     public Slider BatterySlider;
     public Text BatteryText;
+    public Image BatteryPlugged;
     public Text Title;
     public Dropdown StateSelection;
     public Dropdown ThermalState;
@@ -177,7 +178,9 @@ public class HololensPane : MonoBehaviour {
         BatteryText.text = ((int)(data.GetRemainingCharge() * 100)) + "%";
         //show charge on overview screen
         tab.SetCharge(data.GetRemainingCharge());
-        tab.SetPlugged(data.Charging > 0);
+        bool isPluggedIn = data.Charging > 0;
+        tab.SetPlugged(isPluggedIn);
+        BatteryPlugged.enabled = isPluggedIn;
         if (data.GetRemainingCharge() <= tab.lowLevel && data.Charging == 0)
         {
             warnings.addWarning(Warning.Battery, "plug in device");
