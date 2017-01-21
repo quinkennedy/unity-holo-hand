@@ -20,10 +20,11 @@ public class KinectRegistration : MonoBehaviour {
 
             //select the Hololens which is inside the "active" zone
             // relative to its calibration point
+            activeHMD = null;
             foreach (KinectCalibrationPlane plane in KinectCalibrationPlane.calibrationPlanes)
             {
                 Transform hmd = plane.getHMD();
-                if (plane.activeBounds.Contains(hmd.position))//DepthSourceView.PointInOABB(hmd.position, plane.activeBounds))// 
+                if (plane.activeBounds.Contains(plane.transform.InverseTransformPoint(hmd.position)))//DepthSourceView.PointInOABB(hmd.position, plane.activeBounds))// 
                 {
                     activeHMD = hmd;
                     transform.position = plane.transform.position;

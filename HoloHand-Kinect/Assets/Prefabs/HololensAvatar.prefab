@@ -703,6 +703,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 43b85ce78e6357647afdce68f3a86ee4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  wireframe: {fileID: 2100000, guid: 63e3ef65258af7146912949a9e248905, type: 2}
 --- !u!114 &114093052640965456
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -746,6 +747,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5d8981503b3bf9b4bbc32addfd6114ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  StateIndex: 0
+  ID: 
+  IP: 
 --- !u!114 &114572324673356594
 MonoBehaviour:
   m_ObjectHideFlags: 1
