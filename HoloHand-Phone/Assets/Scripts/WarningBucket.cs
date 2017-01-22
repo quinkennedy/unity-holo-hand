@@ -8,11 +8,9 @@ public class WarningBucket {
     private Text warningText;
     private Image warningImage;
 
-    public WarningBucket(Text warningText, Image warningImage)
+    public WarningBucket()
     {
         warnings = new Dictionary<object, string>();
-        this.warningText = warningText;
-        this.warningImage = warningImage;
     }
 
     private void displayWarnings()
@@ -38,7 +36,6 @@ public class WarningBucket {
             warningImage.enabled = true;
         }
         warnings.Add(key, warning);
-        displayWarnings();
     }
 
     public bool hasWarning(object key)
@@ -53,6 +50,5 @@ public class WarningBucket {
         {
             warningImage.enabled = false;
         }
-        displayWarnings();
     }
 }
