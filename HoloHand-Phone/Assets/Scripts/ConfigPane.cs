@@ -15,7 +15,7 @@ public class ConfigPane : MonoBehaviour {
     public TabLogic configTab;
     public Text WarningOutput;
     private bool _needConfig = true;
-    WarningBucket warnings;
+    Dictionary<Warning, string> warnings;
     public bool needConfig
     {
         get
@@ -55,7 +55,7 @@ public class ConfigPane : MonoBehaviour {
 	void Start ()
     {
         instance = this;
-        warnings = new WarningBucket(WarningOutput, configTab.WarningImage);
+        warnings = new Dictionary<Warning, string>();
         bool setIP = false;
         if (PlayerPrefs.HasKey("serverIP"))
         {
@@ -81,7 +81,8 @@ public class ConfigPane : MonoBehaviour {
             GetComponent<RectTransform>().SetAsFirstSibling();
         } else
         {
-            warnings.addWarning(Warning.Auth, "enter authication credentials");
+            warnings.Add(Warning.Auth, "enter authication credentials");
+            UpdateWarnings();
         }
 
         if (PlayerPrefs.HasKey("hlPkgName"))
@@ -99,6 +100,23 @@ public class ConfigPane : MonoBehaviour {
             AppId = "App";
         }
 	}
+
+    private void UpdateWarnings()
+    {
+        string displayText = string.Empty;
+        Dictionary<Warning, string>.ValueCollection values = warnings.Values;
+        foreach (string value in values)
+        {
+            if (!string.IsNullOrEmpty(displayText))
+            {
+                displayText += System.Environment.NewLine;
+            }
+            displayText += value;
+        }
+        WarningOutput.text = displayText;
+
+        configTab.WarningImage.enabled = (warnings.Count > 0);
+    }
 
     public void OnConnectedToServer()
     {
@@ -157,7 +175,8 @@ public class ConfigPane : MonoBehaviour {
         }
         HLUserField.text = "";
         HLPassField.text = "";
-        warnings.removeWarning(Warning.Auth);
+        warnings.Remove(Warning.Auth);
+        UpdateWarnings();
 
         PlayerPrefs.SetString("hlAuth", auth);
         PlayerPrefs.Save();

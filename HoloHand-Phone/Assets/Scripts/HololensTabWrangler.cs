@@ -6,17 +6,16 @@ using UnityEngine.UI;
 public class HololensTabWrangler : MonoBehaviour {
 
     public static HololensTabWrangler Instance;
-    private List<HololensPane> hlTabs;
-    private List<HololensAvatarLogic> hololenses;
+    private List<HololensOverView> hlTabs;
     public GameObject tabPrefab, hololensPanePrefab;
+    public Transform tabContainer, paneContainer;
     private TabLogic activeTab;
     public TabLogic configTab;
 
 	// Use this for initialization
 	void Start () {
         Instance = this;
-        hlTabs = new List<HololensPane>();
-        hololenses = new List<HololensAvatarLogic>();
+        hlTabs = new List<HololensOverView>();
         //load stored tabs
         loadTabs();
 	}
@@ -26,15 +25,15 @@ public class HololensTabWrangler : MonoBehaviour {
         activeTab = tab;
     }
 
-    public void deleteTab(HololensPane pane)
+    public void deleteTab(HololensDetailView pane)
     {
         int tabToRemove = -1;
         for(int i = 0; i < hlTabs.Count; i++)
         {
             if (tabToRemove != -1)
             {
-                hlTabs[i].SaveData(i - 1);
-            } else if (hlTabs[i] == pane)
+                hlTabs[i].Model.SaveData(i - 1);
+            } else if (hlTabs[i].pane.GetComponent<HololensDetailView>() == pane)
             {
                 Debug.Log("[HololensTabWrangler:deleteTab] removing tab " + i);
                 tabToRemove = i;
@@ -46,11 +45,11 @@ public class HololensTabWrangler : MonoBehaviour {
             //remove the tab from our list
             hlTabs.RemoveAt(tabToRemove);
             //remove the tab from saved state
-            HololensPane.DeleteData(hlTabs.Count);
+            HololensModel.DeleteData(hlTabs.Count);
             PlayerPrefs.SetInt("NumDevices", hlTabs.Count);
             PlayerPrefs.Save();
             //remove the tab from the scene
-            GameObject.Destroy(pane.tab.gameObject);
+            GameObject.Destroy(hlTabs[tabToRemove].gameObject);
             GameObject.Destroy(pane.gameObject);
         } else {
             Debug.LogWarning(
@@ -58,31 +57,35 @@ public class HololensTabWrangler : MonoBehaviour {
         }
     }
 
-    private HololensPane createTab()
+    private HololensDetailView createTab(HololensModel model)
     {
         //create the tab and pane separately 
         //since they go in different containers
         GameObject tabGO = 
             GameObject.Instantiate(
                 tabPrefab, 
-                transform.Find("ContentPanel").Find("OverviewPane"), 
+                tabContainer, 
                 false);
-        HololensTab tab = tabGO.GetComponent<HololensTab>();
+        HololensOverView tab = tabGO.GetComponent<HololensOverView>();
+        tab.Model = model;
         GameObject paneGO = 
             GameObject.Instantiate(
                 hololensPanePrefab, 
-                transform.Find("ContentPanel"), 
+                paneContainer, 
                 false);
-        HololensPane pane = paneGO.GetComponent<HololensPane>();
+        HololensDetailView pane = paneGO.GetComponent<HololensDetailView>();
+        pane.Model = model;
 
         //connect the tab and pane together
-        pane.tab = tab;
         tab.pane = paneGO;
 
         //make sure the pane doesn't interrupt the current view
         paneGO.transform.SetAsFirstSibling();
+        //put the tabs above the "Config" tab
+        Debug.Log("[HololensTabWrangler:createTab] " + model.ID + " moving to position " + (tabContainer.childCount - 2));
+        tabGO.transform.SetSiblingIndex(tabContainer.childCount - 2);
 
-        hlTabs.Add(pane);
+        hlTabs.Add(tab);
         return pane;
     }
 
@@ -91,8 +94,8 @@ public class HololensTabWrangler : MonoBehaviour {
         int numDevices = PlayerPrefs.GetInt("NumDevices");
         for(int i = 0; i < numDevices; i++)
         {
-            HololensPane pane = createTab();
-            pane.LoadData(i);
+            HololensModel model = HololensModel.CreateModel(i);
+            createTab(model);
         }
     }
 
@@ -102,13 +105,13 @@ public class HololensTabWrangler : MonoBehaviour {
         //match a Hololens to it's tab by ID
         for(int i = 0; i < hlTabs.Count && !foundTab; i++)
         {
-            HololensPane pane = hlTabs[i];
-            if (pane.ID.Equals(hololens.ID) && 
-                !pane.hasLinkedHololens())
+            HololensOverView tab = hlTabs[i];
+            if (tab.Model.ID.Equals(hololens.ID) && 
+                !tab.Model.IsConnected)
             {
                 foundTab = true;
-                pane.linkHololens(hololens);
-                pane.SaveData(i);
+                tab.Model.linkHololens(hololens);
+                tab.Model.SaveData(i);
                 PlayerPrefs.Save();
             }
         }
@@ -116,13 +119,11 @@ public class HololensTabWrangler : MonoBehaviour {
         //if no matching tab was found, create a new one
         if (!foundTab)
         {
+            HololensModel model = HololensModel.CreateModel(hololens);
             //create a new tab
-            HololensPane pane = createTab();
-            //match it to this hololens
-            pane.ID = hololens.ID;
-            pane.linkHololens(hololens);
+            createTab(model);
             //save so we load the tab next time
-            pane.SaveData(hlTabs.Count - 1);
+            model.SaveData(hlTabs.Count - 1);
             PlayerPrefs.SetInt("NumDevices", hlTabs.Count);
             PlayerPrefs.Save();
         }

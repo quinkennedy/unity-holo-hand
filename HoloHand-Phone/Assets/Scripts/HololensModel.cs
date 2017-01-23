@@ -4,27 +4,52 @@ using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.Networking;
 
-public class RemoteHololensData : MonoBehaviour {
+public class HololensModel : MonoBehaviour {
 
     private float _batteryLevel;
     private bool _charging;
-    private int _stateIndex;
+    private int _sceneIndex;
     private string _ip;
     private string _id;
     private bool _connected;
     private bool _running;
-    private int _thermalState;
+    private ThermalLevel _thermalState;
+    private bool _tracking;
+    private string[] _scenes = new string[0];
+    private const float _batteryWarningLevel = 0.35f;
     private HololensAvatarLogic _avatar;
-    private WarningBucket warnings;
-    private static string HololensAppId = null;// = "HoloHand-Lens_pzq3xp76mxafg!App";
-    private static string HololensPackageName = null;// = "HoloHand-Lens_1.0.0.0_x86__pzq3xp76mxafg";
+    private Dictionary<Warning, string> _warnings;
+    private string _appId = null;// = "HoloHand-Lens_pzq3xp76mxafg!App";
+    private string _packageName = null;// = "HoloHand-Lens_1.0.0.0_x86__pzq3xp76mxafg";
+    private string _version = "X.X.X.X";
+    private int _dataIndex = -1;
     public enum StateItem
     {
-        Battery, Scene, Thermal, App, Warnings
+        //when we get a response from the battery API
+        Battery,
+        //when the hololens changes scenes
+        Scene,
+        //when we get an update from the thermal API
+        Thermal,
+        //
+        App,
+        //when a warning is added or removed
+        Warnings,
+        //when the list of possible scenes is updates
+        SceneList
     }
     public enum Warning
     {
-        API, Battery, Package
+        //general API errors, mostly caused by return error codes
+        API,
+        //when the battery gets below _batteryWarningLevel
+        Battery,
+        //when we can't find the specified package
+        Package
+    }
+    public enum ThermalLevel
+    {
+        Normal, Warm, Critical
     }
     public delegate void StateUpdated(StateItem item);
     public event StateUpdated OnStateChange;
@@ -41,82 +66,120 @@ public class RemoteHololensData : MonoBehaviour {
                 return 0;
             }
         }
+        set
+        {
+            if (_connected)
+            {
+                MobileAvatarLogic.myself.CmdChangeClientState(_avatar.netId, value);
+            } else
+            {
+                _sceneIndex = value;
+            }
+        }
     }
     public string ID
     {
-        get
-        {
-            return _id;
-        }
+        get { return _id; }
     }
     public string IP
     {
-        get
-        {
-            return _ip;
-        }
+        get { return _ip; }
     }
     public string AppVersion
     {
         get
         {
-            if (HololensPackageName != null)
-            {
-                string pattern = "\\d\\.\\d\\.\\d\\.\\d";
-                return Regex.Match(HololensPackageName, pattern).Value;
-            } else
-            {
-                return "X.X.X.X";
-            }
+            return _version;
         }
     }
     public bool IsAppRunning
     {
-        get
-        {
-            return _running;
-        }
+        get { return _running; }
     }
-    public int ThermalState
+    public ThermalLevel ThermalState
     {
-        get
+        get { return _thermalState; }
+    }
+    public bool Tracking
+    {
+        get { return _tracking; }
+    }
+    public bool IsConnected
+    {
+        get { return _connected; }
+    }
+    public float GetCharge
+    {
+        get { return _batteryLevel; }
+    }
+    public bool IsCharging
+    {
+        get { return _charging; }
+    }
+    public string[] SceneList
+    {
+        get { return _scenes; }
+    }
+    public Dictionary<Warning, string> Warnings
+    {
+        get { return _warnings; }
+    }
+
+    public void Start()
+    {
+    }
+
+    public void Update()
+    {
+        if (_connected)
         {
-            return _thermalState;
+            if (_sceneIndex != _avatar.StateIndex)
+            {
+                _sceneIndex = _avatar.StateIndex;
+                NotifyStateChange(StateItem.Scene);
+            }
         }
     }
 
-    public RemoteHololensData(int index)
+    public static HololensModel CreateModel(int index)
     {
+        GameObject go = new GameObject();
+        HololensModel model = go.AddComponent<HololensModel>();
         string ip = PlayerPrefs.GetString("hl" + index + "IP");
         string id = PlayerPrefs.GetString("hl" + index + "ID");
         Debug.Log(
             "[HololensPane:LoadData] loaded #" + index + " " + id + "@" + ip);
-        _ip = ip;
+        model.init(id, ip);
+        model._dataIndex = index;
+        return model;
+    }
+
+    public static HololensModel CreateModel(HololensAvatarLogic hololens)
+    {
+        GameObject go = new GameObject("HololensModel");
+        HololensModel model = go.AddComponent<HololensModel>();
+        model.init(hololens.ID, hololens.IP);
+        model.linkHololens(hololens);
+        return model;
+    }
+
+    private void init(string id, string ip)
+    {
         _id = id;
-
-        init();
-    }
-
-    public RemoteHololensData(HololensAvatarLogic hololens, int index)
-    {
-        _id = hololens.ID;
-        _ip = hololens.IP;
-
-        init();
-    }
-
-    private void init()
-    {
+        _ip = ip;
+        name = (_id + "_model");
         InvokeRepeating("queryStatus", 1, 60);
-        warnings = new WarningBucket();
+        _warnings = new Dictionary<Warning, string>();
     }
 
     public void SaveData(int index)
     {
         Debug.Log(
             "[HololensPane:SaveData] saving #" + index + " " + ID + "@" + IP);
+        _dataIndex = index;
         PlayerPrefs.SetString("hl" + index + "IP", IP);
         PlayerPrefs.SetString("hl" + index + "ID", ID);
+        PlayerPrefs.SetString("hl" + index + "Version", AppVersion);
     }
 
     public static void DeleteData(int index)
@@ -124,21 +187,34 @@ public class RemoteHololensData : MonoBehaviour {
         Debug.Log("[HololensPane:DeleteData] deleting #" + index);
         PlayerPrefs.DeleteKey("hl" + index + "IP");
         PlayerPrefs.DeleteKey("hl" + index + "ID");
+        PlayerPrefs.DeleteKey("hl" + index + "Version");
+    }
+
+    private void NotifyStateChange(StateItem item)
+    {
+        if (OnStateChange != null)
+        {
+            OnStateChange(item);
+        }
     }
 
     public void linkHololens(HololensAvatarLogic hololens)
     {
-        _ip = hololens.IP;
         _avatar = hololens;
+        _ip = _avatar.IP;
         _connected = true;
         _avatar.OnDestroyListeners.Add(HololensDisconnected);
-        string[] states = new string[_avatar.StateNames.Count];
-        for (int i = 0; i < states.Length; i++)
-        {
-            states[i] = _avatar.StateNames[i];
-        }
-        StatesChanged(states);
-        _avatar.OnStateListListeners.Add(StatesChanged);
+        _scenes = new string[_avatar.StateNames.Count];
+        _avatar.StateNames.CopyTo(_scenes, 0);
+        NotifyStateChange(StateItem.App);
+        NotifyStateChange(StateItem.SceneList);
+        _avatar.OnStateListListeners.Add(ScenesChanged);
+    }
+
+    public void ScenesChanged(string[] scenes)
+    {
+        _scenes = scenes;
+        NotifyStateChange(StateItem.SceneList);
     }
 
     public void HololensDisconnected()
@@ -150,7 +226,7 @@ public class RemoteHololensData : MonoBehaviour {
 
     public void manualQueryStatus()
     {
-        warnings.removeWarning(Warning.API);
+        _warnings.Remove(Warning.API);
         queryStatus();
     }
 
@@ -161,7 +237,7 @@ public class RemoteHololensData : MonoBehaviour {
             string auth = getAuth();
             if (string.IsNullOrEmpty(HololensPackageName))
             {
-                StartCoroutine(coGetPackageList(auth));
+                StartCoroutine(coFindPackage(auth));
             }
             else
             {
@@ -191,8 +267,8 @@ public class RemoteHololensData : MonoBehaviour {
     private void RefocusApp()
     {
         string auth = getAuth();
-        string appID = Hex64Encode(HololensAppId); //"SG9sb0hhbmQtTGVuc19wenEzeHA3Nm14YWZnIUFwcA==";// WWW.EscapeURL();// 
-        string packageName = Hex64Encode(HololensPackageName); //"SG9sb0hhbmQtTGVuc18xLjAuMC4wX3g4Nl9fcHpxM3hwNzZteGFmZw==";// WWW.EscapeURL();// 
+        string appID = Hex64Encode(_appId); //"SG9sb0hhbmQtTGVuc19wenEzeHA3Nm14YWZnIUFwcA==";// WWW.EscapeURL();// 
+        string packageName = Hex64Encode(_packageName); //"SG9sb0hhbmQtTGVuc18xLjAuMC4wX3g4Nl9fcHpxM3hwNzZteGFmZw==";// WWW.EscapeURL();// 
         StartCoroutine(coRefocusApp(auth, appID, packageName));
     }
 
@@ -215,19 +291,19 @@ public class RemoteHololensData : MonoBehaviour {
     public void RestartApp()
     {
         string auth = getAuth();
-        string appID = Hex64Encode(HololensAppId); //"SG9sb0hhbmQtTGVuc19wenEzeHA3Nm14YWZnIUFwcA==";// WWW.EscapeURL();// 
-        string packageName = Hex64Encode(HololensPackageName); //"SG9sb0hhbmQtTGVuc18xLjAuMC4wX3g4Nl9fcHpxM3hwNzZteGFmZw==";// WWW.EscapeURL();// 
+        string appID = Hex64Encode(_appId); //"SG9sb0hhbmQtTGVuc19wenEzeHA3Nm14YWZnIUFwcA==";// WWW.EscapeURL();// 
+        string packageName = Hex64Encode(_packageName); //"SG9sb0hhbmQtTGVuc18xLjAuMC4wX3g4Nl9fcHpxM3hwNzZteGFmZw==";// WWW.EscapeURL();// 
         StartCoroutine(coRestartApp(auth, appID, packageName));
     }
 
     public void ShutdownApp()
     {
         string auth = getAuth();
-        string packageName = Hex64Encode(HololensPackageName); //WWW.EscapeURL("SG9sb0hhbmQtTGVuc18xLjAuMC4wX3g4Nl9fcHpxM3hwNzZteGFmZw==");// 
+        string packageName = Hex64Encode(_packageName); //WWW.EscapeURL("SG9sb0hhbmQtTGVuc18xLjAuMC4wX3g4Nl9fcHpxM3hwNzZteGFmZw==");// 
         StartCoroutine(coShutdownApp(auth, packageName));
     }
 
-    public IEnumerator coGetPackageList(string auth)
+    public IEnumerator coFindPackage(string auth)
     {
         string endpoint = "/api/app/packagemanager/packages";
         string address = "http://" + IP + endpoint;
@@ -247,11 +323,20 @@ public class RemoteHololensData : MonoBehaviour {
                     if (package.Name.ToLower().Equals(compareTo) ||
                         package.PackageFamilyName.ToLower().Equals(compareTo))
                     {
-                        HololensPackageName = package.PackageFullName;
-                        HololensAppId = package.PackageRelativeId;
-                        Debug.Log("[HololensPane:coGetPackageList] found family name match");
-                        Debug.Log("[HololensPane:coGetPackageList] pkg/app: " + HololensPackageName + " / " + HololensAppId);
                         matched = true;
+                        if (!package.PackageFullName.Equals(_packageName))
+                        {
+                            _packageName = package.PackageFullName;
+                            _appId = package.PackageRelativeId;
+                            string pattern = "\\d+\\.\\d+\\.\\d+\\.\\d+";
+                            string capturedVersion = Regex.Match(_packageName, pattern).Value;
+                            if (!capturedVersion.Equals(_version)) {
+                                _version = capturedVersion;
+                                SaveData()
+                            }
+                            Debug.Log("[HololensPane:coGetPackageList] found family name match");
+                            Debug.Log("[HololensPane:coGetPackageList] pkg/app/version: " + _packageName + " / " + _appId +  " / " + _version);
+                        }
                         break;
                     }
                 }
@@ -259,7 +344,7 @@ public class RemoteHololensData : MonoBehaviour {
                 if (matched)
                 {
                     StartCoroutine(coGetRunningProcesses(auth));
-                    warnings.removeWarning(Warning.Package);
+                    _warnings.Remove(Warning.Package);
                     if (OnStateChange != null)
                     {
                         OnStateChange(StateItem.Warnings);
@@ -268,11 +353,8 @@ public class RemoteHololensData : MonoBehaviour {
                 else
                 {
                     Debug.Log("[HololensPane:coGetPackageList] didn't find app: " + res.downloadHandler.text);
-                    warnings.addWarning(Warning.Package, "package not found");
-                    if (OnStateChange != null)
-                    {
-                        OnStateChange(StateItem.Warnings);
-                    }
+                    _warnings.Add(Warning.Package, "package not found");
+                    NotifyStateChange(StateItem.Warnings);
                 }
             });
     }
@@ -342,7 +424,7 @@ public class RemoteHololensData : MonoBehaviour {
     public IEnumerator coGetResponse(
         UnityWebRequest req, string auth, ResponseHandler handler)
     {
-        if (!warnings.hasWarning(Warning.API))
+        if (!_warnings.ContainsKey(Warning.API))
         {
             req.SetRequestHeader("AUTHORIZATION", auth);
             Debug.Log("[HololensPane:coSendWithoutResponse] request to " + req.url);
@@ -376,11 +458,8 @@ public class RemoteHololensData : MonoBehaviour {
                 else
                 {
                     Debug.LogWarning("[HololensPane:coGetResponse] code " + req.responseCode + " from " + req.url);
-                    warnings.addWarning(Warning.API, "API response " + req.responseCode);
-                    if (OnStateChange != null)
-                    {
-                        OnStateChange(StateItem.Warnings);
-                    }
+                    _warnings.Add(Warning.API, "API response " + req.responseCode);
+                    NotifyStateChange(StateItem.Warnings);
                     //TODO: limit queries or notify user based on return code
                     //code 401 for wrong auth - set warning and prompt user to set auth. Wait for "sync API"
                     //code 343 for temporarily blocked IP (due to repeated bad access attempts) - set warning. Wait for "sync API"
@@ -430,11 +509,19 @@ public class RemoteHololensData : MonoBehaviour {
         {
             ThermalStageResponse parsed =
                 ThermalStageResponse.CreateFromJSON(res.downloadHandler.text);
-            _thermalState = parsed.CurrentStage - 1;
-            if (OnStateChange != null)
+            switch (parsed.CurrentStage)
             {
-                OnStateChange(StateItem.Thermal);
+                case 1:
+                    _thermalState = ThermalLevel.Normal;
+                    break;
+                case 2:
+                    _thermalState = ThermalLevel.Warm;
+                    break;
+                case 3:
+                    _thermalState = ThermalLevel.Critical;
+                    break;
             }
+            NotifyStateChange(StateItem.Thermal);
             //ThermalState.value = parsed.CurrentStage - 1;
             //if (parsed.CurrentStage >= 3)
             //{
@@ -472,10 +559,7 @@ public class RemoteHololensData : MonoBehaviour {
                 }
             }
             _running = found;
-            if (OnStateChange != null)
-            {
-                OnStateChange(StateItem.App);
-            }
+            NotifyStateChange(StateItem.App);
             /*if (!found)
             {
                 foreach(RunningProcessesResponse.Process process in parsed.Processes)
@@ -496,10 +580,7 @@ public class RemoteHololensData : MonoBehaviour {
                 BatteryResponse.CreateFromJSON(res.downloadHandler.text);
             _batteryLevel = parsed.GetRemainingCharge();
             _charging = parsed.Charging > 0;
-            if (OnStateChange != null)
-            {
-                OnStateChange(StateItem.Battery);
-            }
+            NotifyStateChange(StateItem.Battery);
         });
     }
 }
