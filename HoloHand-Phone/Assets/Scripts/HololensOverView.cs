@@ -11,6 +11,7 @@ public class HololensOverView : TabLogic {
     public Color BatteryOK, BatteryLow;
     public Text SceneOutput;
     public GameObject Details;
+    public Text Version;
     public float lowLevel = 0.25f;
     private HololensModel _model;
 
@@ -51,10 +52,10 @@ public class HololensOverView : TabLogic {
             case HololensModel.StateItem.Warnings:
                 UpdateWarnings();
                 break;
+            case HololensModel.StateItem.SceneList:
             case HololensModel.StateItem.Scene:
                 UpdateActiveScene();
                 break;
-            case HololensModel.StateItem.SceneList:
             case HololensModel.StateItem.Thermal:
                 break;
         }
@@ -77,11 +78,11 @@ public class HololensOverView : TabLogic {
             //set back to small size
             GetComponent<LayoutElement>().flexibleHeight = 0;
             //move to bottom of list (above Config)
-            Debug.Log("[HololensOverview:UpdatedAppState] " + _model.ID + " moving to " + (transform.parent.childCount - 2));
+            Debug.Log("[HololensOverView:UpdatedAppState] " + _model.ID + " moving to " + (transform.parent.childCount - 2));
             transform.SetSiblingIndex(transform.parent.childCount - 2);
             Details.SetActive(false);
         }
-        UpdateBattery();
+        Version.text = "v" + _model.AppVersion;
     }
 
     private void UpdateWarnings()
@@ -102,7 +103,7 @@ public class HololensOverView : TabLogic {
 
     private void UpdateActiveScene()
     {
-        if (_model.SceneIndex < Model.SceneList.Length)
+        if (_model.SceneIndex < _model.SceneList.Length)
         {
             SceneOutput.text = "Scene: " + _model.SceneList[_model.SceneIndex];
         }

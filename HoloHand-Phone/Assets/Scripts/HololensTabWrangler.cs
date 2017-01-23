@@ -42,15 +42,15 @@ public class HololensTabWrangler : MonoBehaviour {
 
         if (tabToRemove != -1)
         {
+            //remove the tab from the scene
+            GameObject.Destroy(hlTabs[tabToRemove].gameObject);
+            GameObject.Destroy(pane.gameObject);
             //remove the tab from our list
             hlTabs.RemoveAt(tabToRemove);
             //remove the tab from saved state
             HololensModel.DeleteData(hlTabs.Count);
             PlayerPrefs.SetInt("NumDevices", hlTabs.Count);
             PlayerPrefs.Save();
-            //remove the tab from the scene
-            GameObject.Destroy(hlTabs[tabToRemove].gameObject);
-            GameObject.Destroy(pane.gameObject);
         } else {
             Debug.LogWarning(
                 "[HololensTabWrangler:deletTab] couldn't find tab");

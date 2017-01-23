@@ -147,10 +147,12 @@ public class HololensModel : MonoBehaviour {
         HololensModel model = go.AddComponent<HololensModel>();
         string ip = PlayerPrefs.GetString("hl" + index + "IP");
         string id = PlayerPrefs.GetString("hl" + index + "ID");
+        string version = PlayerPrefs.GetString("hl" + index + "Version");
         Debug.Log(
-            "[HololensPane:LoadData] loaded #" + index + " " + id + "@" + ip);
+            "[HololensModel:CreateModel] loaded #" + index + " " + id + "@" + ip + " v" + version);
         model.init(id, ip);
         model._dataIndex = index;
+        model._version = version;
         return model;
     }
 
@@ -175,7 +177,7 @@ public class HololensModel : MonoBehaviour {
     public void SaveData(int index)
     {
         Debug.Log(
-            "[HololensPane:SaveData] saving #" + index + " " + ID + "@" + IP);
+            "[HololensModel:SaveData] saving #" + index + " " + ID + "@" + IP + " v" + AppVersion);
         _dataIndex = index;
         PlayerPrefs.SetString("hl" + index + "IP", IP);
         PlayerPrefs.SetString("hl" + index + "ID", ID);
@@ -184,7 +186,7 @@ public class HololensModel : MonoBehaviour {
 
     public static void DeleteData(int index)
     {
-        Debug.Log("[HololensPane:DeleteData] deleting #" + index);
+        Debug.Log("[HololensModel:DeleteData] deleting #" + index);
         PlayerPrefs.DeleteKey("hl" + index + "IP");
         PlayerPrefs.DeleteKey("hl" + index + "ID");
         PlayerPrefs.DeleteKey("hl" + index + "Version");
@@ -221,6 +223,7 @@ public class HololensModel : MonoBehaviour {
     {
         _avatar = null;
         _connected = false;
+        NotifyStateChange(StateItem.App);
         RefocusApp();
     }
 
@@ -235,37 +238,33 @@ public class HololensModel : MonoBehaviour {
         if (PlayerPrefs.HasKey("hlAuth"))
         {
             string auth = getAuth();
-            if (string.IsNullOrEmpty(HololensPackageName))
-            {
-                StartCoroutine(coFindPackage(auth));
-            }
-            else
-            {
-                StartCoroutine(coGetRunningProcesses(auth));
-            }
+            StartCoroutine(coFindPackage(auth));
             StartCoroutine(coGetBatteryCharge(auth));
             StartCoroutine(coGetThermalState(auth));
         }
         else
         {
-            Debug.Log("[HololensPane:queryStatus] auth not set");
+            Debug.Log("[HololensModel:queryStatus] auth not set");
         }
     }
 
     public void RestartDevice()
     {
+        _warnings.Remove(Warning.API);
         string auth = getAuth();
         StartCoroutine(coPostWithoutResponse("/api/control/restart", auth));
     }
 
     public void ShutdownDevice()
     {
+        _warnings.Remove(Warning.API);
         string auth = getAuth();
         StartCoroutine(coPostWithoutResponse("/api/control/shutdown", auth));
     }
 
     private void RefocusApp()
     {
+        _warnings.Remove(Warning.API);
         string auth = getAuth();
         string appID = Hex64Encode(_appId); //"SG9sb0hhbmQtTGVuc19wenEzeHA3Nm14YWZnIUFwcA==";// WWW.EscapeURL();// 
         string packageName = Hex64Encode(_packageName); //"SG9sb0hhbmQtTGVuc18xLjAuMC4wX3g4Nl9fcHpxM3hwNzZteGFmZw==";// WWW.EscapeURL();// 
@@ -290,6 +289,7 @@ public class HololensModel : MonoBehaviour {
 
     public void RestartApp()
     {
+        _warnings.Remove(Warning.API);
         string auth = getAuth();
         string appID = Hex64Encode(_appId); //"SG9sb0hhbmQtTGVuc19wenEzeHA3Nm14YWZnIUFwcA==";// WWW.EscapeURL();// 
         string packageName = Hex64Encode(_packageName); //"SG9sb0hhbmQtTGVuc18xLjAuMC4wX3g4Nl9fcHpxM3hwNzZteGFmZw==";// WWW.EscapeURL();// 
@@ -298,6 +298,7 @@ public class HololensModel : MonoBehaviour {
 
     public void ShutdownApp()
     {
+        _warnings.Remove(Warning.API);
         string auth = getAuth();
         string packageName = Hex64Encode(_packageName); //WWW.EscapeURL("SG9sb0hhbmQtTGVuc18xLjAuMC4wX3g4Nl9fcHpxM3hwNzZteGFmZw==");// 
         StartCoroutine(coShutdownApp(auth, packageName));
@@ -332,10 +333,11 @@ public class HololensModel : MonoBehaviour {
                             string capturedVersion = Regex.Match(_packageName, pattern).Value;
                             if (!capturedVersion.Equals(_version)) {
                                 _version = capturedVersion;
-                                SaveData()
+                                SaveData(_dataIndex);
+                                PlayerPrefs.Save();
                             }
-                            Debug.Log("[HololensPane:coGetPackageList] found family name match");
-                            Debug.Log("[HololensPane:coGetPackageList] pkg/app/version: " + _packageName + " / " + _appId +  " / " + _version);
+                            Debug.Log("[HololensModel:coFindPackage] found family name match");
+                            Debug.Log("[HololensModel:coFindPackage] pkg/app/version: " + _packageName + " / " + _appId +  " / " + _version);
                         }
                         break;
                     }
@@ -345,14 +347,11 @@ public class HololensModel : MonoBehaviour {
                 {
                     StartCoroutine(coGetRunningProcesses(auth));
                     _warnings.Remove(Warning.Package);
-                    if (OnStateChange != null)
-                    {
-                        OnStateChange(StateItem.Warnings);
-                    }
+                    NotifyStateChange(StateItem.Warnings);
                 }
                 else
                 {
-                    Debug.Log("[HololensPane:coGetPackageList] didn't find app: " + res.downloadHandler.text);
+                    Debug.Log("[HololensModel:coFindPackage] didn't find app: " + res.downloadHandler.text);
                     _warnings.Add(Warning.Package, "package not found");
                     NotifyStateChange(StateItem.Warnings);
                 }
@@ -380,12 +379,12 @@ public class HololensModel : MonoBehaviour {
         yield return coGetRunningProcesses(auth);
         if (IsAppRunning)
         {
-            Debug.Log("[HololensPane:coRefocusApp] app running in background, sending start message to push it to front");
+            Debug.Log("[HololensModel:coRefocusApp] app running in background, sending start message to push it to front");
             yield return coStartApp(auth, encodedAppId, encodedPackageName);
         }
         else
         {
-            Debug.Log("[HololensPane:coRefocusApp] app not running, keep it off");
+            Debug.Log("[HololensModel:coRefocusApp] app not running, keep it off");
         }
     }
 
@@ -427,7 +426,7 @@ public class HololensModel : MonoBehaviour {
         if (!_warnings.ContainsKey(Warning.API))
         {
             req.SetRequestHeader("AUTHORIZATION", auth);
-            Debug.Log("[HololensPane:coSendWithoutResponse] request to " + req.url);
+            Debug.Log("[HololensModel:coGetResponse] request to " + req.url);
             yield return req.Send();
             if (req.downloadHandler != null)
             {
@@ -447,17 +446,17 @@ public class HololensModel : MonoBehaviour {
             if (req.isError)
             {
                 Debug.LogWarning(
-                    "[HololensPane:coSendWithoutResponse] error: " + req.error);
+                    "[HololensModel:coGetResponse] error: " + req.error);
             }
             else
             {
                 if (req.responseCode >= 200 && req.responseCode < 300)
                 {
-                    Debug.Log("[HololensPane:coGetResponse] success from " + req.url);
+                    Debug.Log("[HololensModel:coGetResponse] success from " + req.url);
                 }
                 else
                 {
-                    Debug.LogWarning("[HololensPane:coGetResponse] code " + req.responseCode + " from " + req.url);
+                    Debug.LogWarning("[HololensModel:coGetResponse] code " + req.responseCode + " from " + req.url);
                     _warnings.Add(Warning.API, "API response " + req.responseCode);
                     NotifyStateChange(StateItem.Warnings);
                     //TODO: limit queries or notify user based on return code
@@ -473,17 +472,17 @@ public class HololensModel : MonoBehaviour {
     public void debugResponse(UnityWebRequest res)
     {
         Debug.Log(
-            "[HololensPane:debugResponse] code:" + res.responseCode +
+            "[HololensModel:debugResponse] code:" + res.responseCode +
             " bytes:" + res.downloadedBytes +
             " headers:" + res.GetResponseHeaders().Keys.Count);
         if (res.downloadHandler != null)
         {
-            Debug.Log("[HololensPane:debugResponse] body: " + res.downloadHandler.text);
+            Debug.Log("[HololensModel:debugResponse] body: " + res.downloadHandler.text);
         }
         foreach (string key in res.GetResponseHeaders().Keys)
         {
             Debug.Log(
-                "[HololensPane:debugResponse] header " +
+                "[HololensModel:debugResponse] header " +
                 key + ": " + res.GetResponseHeader(key));
         }
     }
@@ -552,7 +551,7 @@ public class HololensModel : MonoBehaviour {
                 if (process.ImageName.ToLower().StartsWith(ConfigPane.instance.PackageName.ToLower()))
                 {
                     Debug.Log(
-                        "[HololensPane:coGetRunningProcesses] " +
+                        "[HololensModel:coGetRunningProcesses] " +
                         ConfigPane.instance.PackageName + " is running");
                     found = true;
                     break;

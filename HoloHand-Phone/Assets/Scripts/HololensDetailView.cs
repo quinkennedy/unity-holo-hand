@@ -160,10 +160,10 @@ public class HololensDetailView : MonoBehaviour {
 
     public void SetState()
     {
-        Debug.Log("[HololensPane:SetState] triggered");
+        Debug.Log("[HololensDetailView:SetState] triggered");
         if (!_changingState)
         {
-            Debug.Log("[HololensPane:SetState] setting state to " + StateSelection.value);
+            Debug.Log("[HololensDetailView:SetState] setting state to " + StateSelection.value);
             _model.SceneIndex = StateSelection.value;
         }
     }
