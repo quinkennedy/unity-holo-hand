@@ -579,6 +579,15 @@ public class HololensModel : MonoBehaviour {
                 BatteryResponse.CreateFromJSON(res.downloadHandler.text);
             _batteryLevel = parsed.GetRemainingCharge();
             _charging = parsed.Charging > 0;
+            if (_batteryLevel < _batteryWarningLevel && !_warnings.ContainsKey(Warning.Battery))
+            {
+                _warnings.Add(Warning.Battery, "Low Battery");
+                NotifyStateChange(StateItem.Battery);
+            } else if (_batteryLevel > _batteryWarningLevel && _warnings.ContainsKey(Warning.Battery))
+            {
+                _warnings.Remove(Warning.Battery);
+                NotifyStateChange(StateItem.Battery);
+            }
             NotifyStateChange(StateItem.Battery);
         });
     }
