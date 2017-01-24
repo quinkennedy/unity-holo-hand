@@ -29,9 +29,19 @@ public class KinectRegistration : MonoBehaviour {
                     //once we found the active headset
                     //align the kinect to the headset's calibration point
                     activeHMD = hmd;
-                    //Debug.Log("[KR:Update] registration: " + plane.transform.position + " anchor offset: " + KinectDebug.configuration.KinectAnchor + " Kinect Position: " + kinect.KinectDepth.transform.position);
-                    transform.position = plane.transform.position - KinectDebug.configuration.KinectAnchor;
-                    transform.rotation = plane.transform.rotation;
+
+                    Matrix4x4 anchorOffset = Matrix4x4.TRS(-KinectDebug.configuration.KinectAnchor, 
+                                                           Quaternion.identity, 
+                                                           Vector3.one);
+                    Matrix4x4 rotate = Matrix4x4.TRS(Vector3.zero, plane.transform.rotation, Vector3.one);
+                    Matrix4x4 translate = Matrix4x4.TRS(plane.transform.position, Quaternion.identity, Vector3.one);
+                    Matrix4x4 mat = Matrix4x4.identity;
+                    mat = anchorOffset * mat;
+                    mat = rotate * mat;
+                    mat = translate * mat;
+
+                    transform.rotation = Quaternion.LookRotation(mat.GetColumn(2), mat.GetColumn(1));
+                    transform.position = mat.GetColumn(3);
                     break;
                 }
             }
