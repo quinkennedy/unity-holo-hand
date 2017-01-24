@@ -9,24 +9,24 @@ public class KinectConfig
     public float kinect_height;
     public int kinect_threshold = 3000;
     public float kinect_distance = 2.5f;
-    public float[] kinect_rot;
+    public float[] kinect_rotation;
     public float[] kinect_anchor_offset;
     public float[] kinect_bounds_pos;
     public float[] kinect_bounds_scale;
-    public Box HMD_active_area;
-    public List<Box> buttons;
+    public Box hmd_active_area;
+    public Box[] buttons;
 
     [System.Serializable]
     public struct Box
     {
-        public float[] position;
+        public float[] pos;
         public float[] scale;
-        public float[] rotation;
+        public float[] rot;
 
         //Getters
         public Vector3 Position
         {
-            get { return new Vector3(position[0], position[1], position[2]); }
+            get { return new Vector3(pos[0], pos[1], pos[2]); }
         }
         public Vector3 Scale
         {
@@ -34,7 +34,7 @@ public class KinectConfig
         }
         public Vector3 Rotation
         {
-            get { return new Vector3(rotation[0], rotation[1], rotation[2]); }
+            get { return new Vector3(rot[0], rot[1], rot[2]); }
         }
     }
 
@@ -53,7 +53,7 @@ public class KinectConfig
     }
     public Vector3 KinectRotation
     {
-        get { return new Vector3(kinect_rot[0], kinect_rot[1], kinect_rot[2]); }
+        get { return new Vector3(kinect_rotation[0], kinect_rotation[1], kinect_rotation[2]); }
     }
     public Vector3 KinectAnchor
     {

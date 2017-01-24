@@ -29,6 +29,7 @@ public class KinectRegistration : MonoBehaviour {
                     //once we found the active headset
                     //align the kinect to the headset's calibration point
                     activeHMD = hmd;
+                    //Debug.Log("[KR:Update] registration: " + plane.transform.position + " anchor offset: " + KinectDebug.configuration.KinectAnchor + " Kinect Position: " + kinect.KinectDepth.transform.position);
                     transform.position = plane.transform.position - KinectDebug.configuration.KinectAnchor;
                     transform.rotation = plane.transform.rotation;
                     break;

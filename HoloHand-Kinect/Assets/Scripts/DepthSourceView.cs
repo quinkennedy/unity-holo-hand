@@ -32,7 +32,7 @@ public class DepthSourceView : MonoBehaviour
     {
     }
 
-    public void Init(float height, Vector3 rot, float distance, List<KinectConfig.Box> buttons )
+    public void Init(float height, Vector3 rot, float distance, KinectConfig.Box[] buttons )
     {
         _Mesh = new Mesh();
         _Mesh.name = "DynamicKinectMesh";
