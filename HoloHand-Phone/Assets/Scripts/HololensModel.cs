@@ -202,6 +202,17 @@ public class HololensModel : MonoBehaviour {
 
     public void linkHololens(HololensAvatarLogic hololens)
     {
+        if (_connected)
+        {
+            Debug.Log("[HololensModel:linkHololens] replacing lens");
+            if (hololens == _avatar)
+            {
+                Debug.Log("[HololensModel:linkHololens] replacement is the same object!");
+            }
+            // if we are already connected to an avatar, we need to stop listening to it's events
+            _avatar.OnDestroyListeners.Remove(HololensDisconnected);
+            _avatar.OnStateListListeners.Remove(ScenesChanged);
+        }
         _avatar = hololens;
         _ip = _avatar.IP;
         _connected = true;

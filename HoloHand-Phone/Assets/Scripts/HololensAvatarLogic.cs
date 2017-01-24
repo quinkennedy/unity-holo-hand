@@ -75,6 +75,7 @@ public class HololensAvatarLogic : NetworkBehaviour {
 
     public override void OnNetworkDestroy()
     {
+        Debug.Log("[HololensAvatarLogic:OnNetworkDestroy] " + ID + " @ " + IP);
         foreach (DestroyedCallback callback in OnDestroyListeners)
         {
             callback();
@@ -84,7 +85,7 @@ public class HololensAvatarLogic : NetworkBehaviour {
     // Use this for initialization
     void Start()
     {
-        Debug.Log("[HololensAvatarLogic:Start] ID: " + ID + " IP: " + IP);
+        Debug.Log("[HololensAvatarLogic:Start] " + ID + " @ " + IP);
         CalibrationPlane = transform.Find("KinectCalibrationPlane");
         CalibrationModel = CalibrationPlane.Find("Model").gameObject;
         //CalibrationModel.SetActive(false);

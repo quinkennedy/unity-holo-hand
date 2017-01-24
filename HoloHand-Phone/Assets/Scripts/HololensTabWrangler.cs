@@ -103,11 +103,14 @@ public class HololensTabWrangler : MonoBehaviour {
     {
         bool foundTab = false;
         //match a Hololens to it's tab by ID
+        // if there is no hololens connected, then we are free to associate the tab
+        // if there is a hololens connected, it might be the same device which quickly re-connected
         for(int i = 0; i < hlTabs.Count && !foundTab; i++)
         {
             HololensOverView tab = hlTabs[i];
             if (tab.Model.ID.Equals(hololens.ID) && 
-                !tab.Model.IsConnected)
+                (!tab.Model.IsConnected ||
+                 tab.Model.IP.Equals(hololens.IP)))
             {
                 foundTab = true;
                 tab.Model.linkHololens(hololens);
