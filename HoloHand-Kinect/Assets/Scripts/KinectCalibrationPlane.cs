@@ -39,9 +39,9 @@ public class KinectCalibrationPlane : MonoBehaviour {
         //activeBox.GetComponent<MeshRenderer>().enabled = false;
         activeBox.GetComponent<MeshRenderer>().material = wireframe;
         activeBox.transform.SetParent(transform, false);
-        activeBox.transform.localPosition = KinectDebug.configuration.HMD_active_area.position;
-        activeBox.transform.localRotation = Quaternion.Euler(KinectDebug.configuration.HMD_active_area.rotation);
-        activeBox.transform.localScale = KinectDebug.configuration.HMD_active_area.scale;
+        activeBox.transform.localPosition = KinectDebug.configuration.HMD_active_area.Position;
+        activeBox.transform.localRotation = Quaternion.Euler(KinectDebug.configuration.HMD_active_area.Rotation);
+        activeBox.transform.localScale = KinectDebug.configuration.HMD_active_area.Scale;
         _activeBounds = activeBox.GetComponent<BoxCollider>().bounds;
 #endif
 

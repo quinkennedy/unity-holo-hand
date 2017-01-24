@@ -32,7 +32,7 @@ public class DepthSourceView : MonoBehaviour
     {
     }
 
-    public void Init( Vector3 pos, Vector3 rot, float distance, List<KinectConfig.Box> buttons )
+    public void Init(float height, Vector3 rot, float distance, List<KinectConfig.Box> buttons )
     {
         _Mesh = new Mesh();
         _Mesh.name = "DynamicKinectMesh";
@@ -50,7 +50,7 @@ public class DepthSourceView : MonoBehaviour
 
         _DepthManager.Init();
         
-        transform.position = pos;
+        transform.position = new Vector3(0, height, 0);
         transform.rotation = Quaternion.Euler(rot);
 
         foreach(KinectConfig.Box buttonData in buttons)
@@ -65,9 +65,9 @@ public class DepthSourceView : MonoBehaviour
         button.GetComponent<MeshRenderer>().enabled = true;
         button.GetComponent<MeshRenderer>().material = buttonMaterial;
         button.transform.SetParent(transform.parent, false);
-        button.transform.localPosition = buttonData.position;
-        button.transform.localScale = buttonData.scale;
-        button.transform.localEulerAngles = buttonData.rotation;
+        button.transform.localPosition = buttonData.Position;
+        button.transform.localScale = buttonData.Scale;
+        button.transform.localEulerAngles = buttonData.Rotation;
         buttons.Add(button.GetComponent<BoxCollider>());
     }
     
@@ -205,8 +205,8 @@ public class DepthSourceView : MonoBehaviour
             {
 
                 Vector3 A = d.Vertices[d.Triangles[i]];
-                Vector3 B = d.Vertices[d.Triangles[i + 1]];
-                Vector3 C = d.Vertices[d.Triangles[i + 2]];
+                //Vector3 B = d.Vertices[d.Triangles[i + 1]];
+                //Vector3 C = d.Vertices[d.Triangles[i + 2]];
 
                 //Vector3 v = Vector3.Cross(A - B, A - C);
 

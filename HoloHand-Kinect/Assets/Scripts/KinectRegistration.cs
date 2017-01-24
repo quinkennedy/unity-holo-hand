@@ -26,8 +26,10 @@ public class KinectRegistration : MonoBehaviour {
                 Transform hmd = plane.getHMD();
                 if (plane.activeBounds.Contains(plane.transform.InverseTransformPoint(hmd.position)))//DepthSourceView.PointInOABB(hmd.position, plane.activeBounds))// 
                 {
+                    //once we found the active headset
+                    //align the kinect to the headset's calibration point
                     activeHMD = hmd;
-                    transform.position = plane.transform.position;
+                    transform.position = plane.transform.position - KinectDebug.configuration.KinectAnchor;
                     transform.rotation = plane.transform.rotation;
                     break;
                 }

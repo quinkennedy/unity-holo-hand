@@ -16,14 +16,14 @@ public class KinectDebug : MonoBehaviour {
 
     // Use this for initialization
     void Awake () {
-        configuration = new KinectConfig("config.json");
+        configuration = KinectConfig.CreateFromJSON("config.json");
 
-        KinectDepth.Init(configuration.kinect_pos, configuration.kinect_rot, configuration.depthDistance, configuration.buttons);
+        KinectDepth.Init(configuration.KinectHeight, configuration.KinectRotation, configuration.KinectDepthDistance, configuration.buttons);
 
         GameObject kinectBounds = GameObject.Find("Cube_001");
-        Vector3 pos = configuration.kinect_bounds_pos;
+        Vector3 pos = configuration.KinectBoundsPosition;
     
-        kinectBounds.transform.localScale = configuration.kinect_bounds_scale;
+        kinectBounds.transform.localScale = configuration.KinectBoundsScale;
         kinectBounds.transform.localPosition = pos;
         
     }
@@ -32,7 +32,7 @@ public class KinectDebug : MonoBehaviour {
 
     void Update()
     {
-
+        // view All kinect data
         if (Input.GetKey(KeyCode.A))
         {
             KinectDepth.DepthSourceManager.GetComponent<DepthSourceManager>().maxZ = 4500;
@@ -40,15 +40,15 @@ public class KinectDebug : MonoBehaviour {
             GameObject kinectBounds = GameObject.Find("Cube_001");
             kinectBounds.transform.localScale = Vector3.one * 4.5f;
         }
-
+        // Reset to loaded file settings
         if (Input.GetKey(KeyCode.R))
         {
-            KinectDepth.DepthSourceManager.GetComponent<DepthSourceManager>().maxZ = configuration.depthDistance * 1000.0f;
+            KinectDepth.DepthSourceManager.GetComponent<DepthSourceManager>().maxZ = configuration.KinectDepthDistance * 1000.0f;
 
             GameObject kinectBounds = GameObject.Find("Cube_001");
-            Vector3 pos = configuration.kinect_bounds_pos;
+            Vector3 pos = configuration.KinectBoundsPosition;
             
-            kinectBounds.transform.localScale = configuration.kinect_bounds_scale;
+            kinectBounds.transform.localScale = configuration.KinectBoundsScale;
             kinectBounds.transform.localPosition = pos;
         }
     }

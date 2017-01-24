@@ -43,11 +43,11 @@ public class KinectConfig
     {
         get { return kinect_height; }
     }
-    public int KinectThreshold
+    public int KinectDepthThreshold
     {
         get { return kinect_threshold; }
     }
-    public float KinectDistance
+    public float KinectDepthDistance
     {
         get { return kinect_distance; }
     }
