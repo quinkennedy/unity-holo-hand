@@ -49,6 +49,9 @@ GameObject:
   serializedVersion: 5
   m_Component:
   - component: {fileID: 4596493929476760}
+  - component: {fileID: 114305685691289024}
+  - component: {fileID: 114648661074206240}
+  - component: {fileID: 114127381549115336}
   m_Layer: 0
   m_Name: WorldLabel
   m_TagString: Untagged
@@ -166,3 +169,66 @@ MeshFilter:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1850948415892626}
   m_Mesh: {fileID: 4300000, guid: 2631b8a691f8d684b8027e261d0e2254, type: 3}
+--- !u!114 &114127381549115336
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1746953104341724}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1768714887, guid: dc443db3e92b4983b9738c1131f555cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_TransformSyncMode: 1
+  m_SendInterval: 0
+  m_SyncRotationAxis: 2
+  m_RotationSyncCompression: 0
+  m_SyncSpin: 0
+  m_MovementTheshold: 0.001
+  m_SnapThreshold: 5
+  m_InterpolateRotation: 1
+  m_InterpolateMovement: 1
+--- !u!114 &114305685691289024
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1746953104341724}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 372142912, guid: dc443db3e92b4983b9738c1131f555cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_SceneId:
+    m_Value: 0
+  m_AssetId:
+    i0: 29
+    i1: 194
+    i2: 229
+    i3: 84
+    i4: 126
+    i5: 52
+    i6: 6
+    i7: 180
+    i8: 41
+    i9: 25
+    i10: 75
+    i11: 43
+    i12: 201
+    i13: 224
+    i14: 37
+    i15: 231
+  m_ServerOnly: 0
+  m_LocalPlayerAuthority: 1
+--- !u!114 &114648661074206240
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1746953104341724}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fc65b69aedb2e6f44b4b30a00a903c6f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

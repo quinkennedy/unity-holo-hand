@@ -13,8 +13,14 @@ using UnityEngine.Events;
 
 public class HololensAvatarLogic : NetworkBehaviour {
 
-    public GameObject WorldLabelPrefab;
-    Dictionary<string, GameObject> NamedWorldLabelPrefabs;
+    public WorldLabelLogic WorldLabelPrefab;
+    [System.Serializable]
+    public struct NamedWorldLabelPrefab
+    {
+        public string name;
+        public WorldLabelLogic prefab;
+    }
+    public NamedWorldLabelPrefab[] NamedWorldLabelPrefabs;
     Transform HMD;
     Transform CalibrationPlane;
     GameObject CalibrationModel;
@@ -23,7 +29,7 @@ public class HololensAvatarLogic : NetworkBehaviour {
     private static Transform MyCalibration;
     public SyncListString StateNames = new SyncListString();
     public static HololensAvatarLogic myAvatar;
-    private List<GameObject> worldLabels;
+    private List<WorldLabelLogic> worldLabels;
     //syncs from server to all clients
     [SyncVar]
     public int StateIndex;
@@ -75,39 +81,40 @@ public class HololensAvatarLogic : NetworkBehaviour {
     private void CmdCreateWorldLabel(string name)
     {
         Debug.Log("[HololensAvatarLogic:CmdCreateWorldLabel] name: " + name);
-        GameObject toCreate = WorldLabelPrefab;
+        WorldLabelLogic toCreate = WorldLabelPrefab;
         //see if a matching world label is registered
-        foreach(string key in NamedWorldLabelPrefabs.Keys)
+        foreach (NamedWorldLabelPrefab entry in NamedWorldLabelPrefabs)
         {
-            if (key.ToLower().Equals(name))
+            if (entry.name.ToLower().Equals(name))
             {
-                toCreate = NamedWorldLabelPrefabs[key];
+                toCreate = entry.prefab;
                 break;
             }
         }
 
         //create the world label, and give it the provided name
-        GameObject goWorldLabel = (GameObject)Instantiate(toCreate);
-        goWorldLabel.name = name;
+        GameObject goWorldLabel = (GameObject)Instantiate(toCreate.gameObject);
+        WorldLabelLogic worldLabel = goWorldLabel.GetComponent<WorldLabelLogic>();
+        worldLabel.anchorName = name;
         NetworkServer.SpawnWithClientAuthority(goWorldLabel, connectionToClient);
 
         if (worldLabels == null)
         {
-            worldLabels = new List<GameObject>();
+            worldLabels = new List<WorldLabelLogic>();
         }
-        worldLabels.Add(goWorldLabel);
+        worldLabels.Add(worldLabel);
     }
 
     [Command]
     private void CmdDestroyWorldLabel(string name)
     {
         Debug.Log("[HololensAvatarLogic:CmdDestroyWorldLabel] name: " + name);
-        foreach (GameObject label in worldLabels)
+        foreach (WorldLabelLogic label in worldLabels)
         {
-            if (label.name.Equals(name))
+            if (label.anchorName.Equals(name))
             {
                 worldLabels.Remove(label);
-                Destroy(label);
+                NetworkServer.Destroy(label.gameObject);
                 return;
             }
         }
@@ -219,7 +226,7 @@ public class HololensAvatarLogic : NetworkBehaviour {
 
     private void RegisterCommands()
     {
-        KeywordManager keywordManager = Camera.main.GetComponent<KeywordManager>();
+        KeywordManager keywordManager = HololensLogic.Instance.GetComponent<KeywordManager>();
         if (keywordManager != null)
         {
             Debug.Log("[HololensAvatarLogic:Start] updating keyword listeners");

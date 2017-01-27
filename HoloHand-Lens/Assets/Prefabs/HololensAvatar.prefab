@@ -746,6 +746,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5d8981503b3bf9b4bbc32addfd6114ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  WorldLabelPrefab: {fileID: 1746953104341724, guid: 1dc2e5547e3406b429194b2bc9e025e7,
+    type: 2}
+  StateIndex: 0
+  ID: 
+  IP: 
 --- !u!114 &114572324673356594
 MonoBehaviour:
   m_ObjectHideFlags: 1

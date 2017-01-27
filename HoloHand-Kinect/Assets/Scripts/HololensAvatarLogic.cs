@@ -13,6 +13,14 @@ using UnityEngine.Events;
 
 public class HololensAvatarLogic : NetworkBehaviour {
 
+    public WorldLabelLogic WorldLabelPrefab;
+    [System.Serializable]
+    public struct NamedWorldLabelPrefab
+    {
+        public string name;
+        public WorldLabelLogic prefab;
+    }
+    public NamedWorldLabelPrefab[] NamedWorldLabelPrefabs;
     Transform HMD;
     Transform CalibrationPlane;
     GameObject CalibrationModel;
@@ -20,6 +28,8 @@ public class HololensAvatarLogic : NetworkBehaviour {
     private bool Placing = false;
     private static Transform MyCalibration;
     public SyncListString StateNames = new SyncListString();
+    public static HololensAvatarLogic myAvatar;
+    private List<WorldLabelLogic> worldLabels;
     //syncs from server to all clients
     [SyncVar]
     public int StateIndex;
@@ -31,7 +41,6 @@ public class HololensAvatarLogic : NetworkBehaviour {
     [Command]
     private void CmdSetStateIndex(int index)
     {
-        Debug.Log("[HololensAvatarLogic:CmdSetStateIndex] " + index);
         this.StateIndex = index;
     }
 
@@ -68,6 +77,50 @@ public class HololensAvatarLogic : NetworkBehaviour {
         RpcNotifyStates(states);
     }
 
+    [Command]
+    private void CmdCreateWorldLabel(string name)
+    {
+        Debug.Log("[HololensAvatarLogic:CmdCreateWorldLabel] name: " + name);
+        WorldLabelLogic toCreate = WorldLabelPrefab;
+        //see if a matching world label is registered
+        foreach (NamedWorldLabelPrefab entry in NamedWorldLabelPrefabs)
+        {
+            if (entry.name.ToLower().Equals(name))
+            {
+                toCreate = entry.prefab;
+                break;
+            }
+        }
+
+        //create the world label, and give it the provided name
+        GameObject goWorldLabel = (GameObject)Instantiate(toCreate.gameObject);
+        WorldLabelLogic worldLabel = goWorldLabel.GetComponent<WorldLabelLogic>();
+        worldLabel.anchorName = name;
+        NetworkServer.SpawnWithClientAuthority(goWorldLabel, connectionToClient);
+
+        if (worldLabels == null)
+        {
+            worldLabels = new List<WorldLabelLogic>();
+        }
+        worldLabels.Add(worldLabel);
+    }
+
+    [Command]
+    private void CmdDestroyWorldLabel(string name)
+    {
+        Debug.Log("[HololensAvatarLogic:CmdDestroyWorldLabel] name: " + name);
+        foreach (WorldLabelLogic label in worldLabels)
+        {
+            if (label.anchorName.Equals(name))
+            {
+                worldLabels.Remove(label);
+                NetworkServer.Destroy(label.gameObject);
+                return;
+            }
+        }
+        Debug.LogWarning("[HololensAvatarLogic:CmdDestroyWorldLabel] didn't find label to destroy");
+    }
+
     public delegate void StateListCallback(string[] states);
     public List<StateListCallback> OnStateListListeners = new List<StateListCallback>();
 
@@ -86,6 +139,7 @@ public class HololensAvatarLogic : NetworkBehaviour {
     void Start()
     {
         Debug.Log("[HololensAvatarLogic:Start] ID: " + ID + " IP: " + IP);
+        //TODO: use inspector to set these
         CalibrationPlane = transform.Find("KinectCalibrationPlane");
         CalibrationModel = CalibrationPlane.Find("Model").gameObject;
         //CalibrationModel.SetActive(false);
@@ -95,11 +149,13 @@ public class HololensAvatarLogic : NetworkBehaviour {
 #if UNITY_WSA_10_0
         if (isLocalPlayer)
         {
+            myAvatar = this;
             HMD = transform.Find("HMD");
 
             InitCalibrationAnchor();
             RegisterCommands();
             RegisterStates();
+            SetupRemoteAnchors();
 
         } else
         {
@@ -137,6 +193,24 @@ public class HololensAvatarLogic : NetworkBehaviour {
         }
     }
 
+    private void SetupRemoteAnchors()
+    {
+        foreach(GameObject goAnchor in HololensLogic.Instance.getAnchors())
+        {
+            CmdCreateWorldLabel(goAnchor.name);
+        }
+    }
+
+    public void CreateWorldLabel(string name)
+    {
+        CmdCreateWorldLabel(name);
+    }
+
+    public void DestroyWorldLabel(string name)
+    {
+        CmdDestroyWorldLabel(name);
+    }
+
     private void InitCalibrationAnchor()
     {
         MyCalibration = CalibrationPlane;
@@ -152,7 +226,7 @@ public class HololensAvatarLogic : NetworkBehaviour {
 
     private void RegisterCommands()
     {
-        KeywordManager keywordManager = Camera.main.GetComponent<KeywordManager>();
+        KeywordManager keywordManager = HololensLogic.Instance.GetComponent<KeywordManager>();
         if (keywordManager != null)
         {
             Debug.Log("[HololensAvatarLogic:Start] updating keyword listeners");
@@ -223,24 +297,26 @@ public class HololensAvatarLogic : NetworkBehaviour {
     
     public void CommandNext()
     {
-        if (StateIndex == 5)
+        Debug.Log("[HololensAvatarLogic:CommandNext]");
+        if (StateIndex >= 4)
         {
             CmdSetStateIndex(0);
         }
         else
         {
-            CmdSetStateIndex(StateIndex++);
+            CmdSetStateIndex(StateIndex + 1);
         }
     }
     
     public void CommandPrevious()
     {
-        if (StateIndex == 0)
+        Debug.Log("[HololensAvatarLogic:CommandPrevious]");
+        if (StateIndex <= 0)
         {
-            CmdSetStateIndex(5);
+            CmdSetStateIndex(4);
         } else
         {
-            CmdSetStateIndex(StateIndex--);
+            CmdSetStateIndex(StateIndex - 1);
         }
     }
 #endif

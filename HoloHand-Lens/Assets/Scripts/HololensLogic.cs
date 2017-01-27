@@ -24,7 +24,7 @@ public class HololensLogic : MonoBehaviour {
         return anchors;
     }
 
-    void AddAnchor()
+    public void AddAnchor()
     {
         string name = "Anchor" + anchors.Count;
         GameObject goAnchor = new GameObject(name);
@@ -56,7 +56,7 @@ public class HololensLogic : MonoBehaviour {
     }
 
     //remove the last anchor
-    void RemoveAnchor()
+    public void RemoveAnchor()
     {
         if (anchors.Count > 0)
         {
