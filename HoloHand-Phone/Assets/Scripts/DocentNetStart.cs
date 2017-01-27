@@ -16,4 +16,15 @@ public class DocentNetStart : INetStartLogic {
             }
         }
     }
+
+    public override void OnApplicationPause(bool pauseStatus)
+    {
+        //if we are pausing, disconnect from the server
+        // so we don't end up in a weird state when we un-pause
+        if (pauseStatus)
+        {
+            Network.Disconnect();
+        }
+        base.OnApplicationPause(pauseStatus);
+    }
 }
