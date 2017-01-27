@@ -67,6 +67,12 @@ public class HololensAvatarLogic : NetworkBehaviour {
         RpcNotifyStates(states);
     }
 
+    [Command]
+    private void CmdCreateWorldLabel(string name)
+    {
+
+    }
+
     public delegate void StateListCallback(string[] states);
     public List<StateListCallback> OnStateListListeners = new List<StateListCallback>();
 
@@ -85,6 +91,7 @@ public class HololensAvatarLogic : NetworkBehaviour {
     void Start()
     {
         Debug.Log("[HololensAvatarLogic:Start] ID: " + ID + " IP: " + IP);
+        //TODO: use inspector to set these
         CalibrationPlane = transform.Find("KinectCalibrationPlane");
         CalibrationModel = CalibrationPlane.Find("Model").gameObject;
         //CalibrationModel.SetActive(false);
@@ -99,6 +106,7 @@ public class HololensAvatarLogic : NetworkBehaviour {
             InitCalibrationAnchor();
             RegisterCommands();
             RegisterStates();
+            SetupRemoteAnchors();
 
         } else
         {
@@ -133,6 +141,14 @@ public class HololensAvatarLogic : NetworkBehaviour {
         } else
         {
             PlaceRelativeTo(MyCalibration);
+        }
+    }
+
+    private void SetupRemoteAnchors()
+    {
+        foreach(GameObject goAnchor in HololensLogic.Instance.getAnchors())
+        {
+
         }
     }
 
