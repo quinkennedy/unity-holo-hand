@@ -13,6 +13,8 @@ using UnityEngine.Events;
 
 public class HololensAvatarLogic : NetworkBehaviour {
 
+    public GameObject WorldLabelPrefab;
+    Dictionary<string, GameObject> NamedWorldLabelPrefabs;
     Transform HMD;
     Transform CalibrationPlane;
     GameObject CalibrationModel;
@@ -20,6 +22,8 @@ public class HololensAvatarLogic : NetworkBehaviour {
     private bool Placing = false;
     private static Transform MyCalibration;
     public SyncListString StateNames = new SyncListString();
+    public static HololensAvatarLogic myAvatar;
+    private List<GameObject> worldLabels;
     //syncs from server to all clients
     [SyncVar]
     public int StateIndex;
@@ -70,7 +74,44 @@ public class HololensAvatarLogic : NetworkBehaviour {
     [Command]
     private void CmdCreateWorldLabel(string name)
     {
+        Debug.Log("[HololensAvatarLogic:CmdCreateWorldLabel] name: " + name);
+        GameObject toCreate = WorldLabelPrefab;
+        //see if a matching world label is registered
+        foreach(string key in NamedWorldLabelPrefabs.Keys)
+        {
+            if (key.ToLower().Equals(name))
+            {
+                toCreate = NamedWorldLabelPrefabs[key];
+                break;
+            }
+        }
 
+        //create the world label, and give it the provided name
+        GameObject goWorldLabel = (GameObject)Instantiate(toCreate);
+        goWorldLabel.name = name;
+        NetworkServer.SpawnWithClientAuthority(goWorldLabel, connectionToClient);
+
+        if (worldLabels == null)
+        {
+            worldLabels = new List<GameObject>();
+        }
+        worldLabels.Add(goWorldLabel);
+    }
+
+    [Command]
+    private void CmdDestroyWorldLabel(string name)
+    {
+        Debug.Log("[HololensAvatarLogic:CmdDestroyWorldLabel] name: " + name);
+        foreach (GameObject label in worldLabels)
+        {
+            if (label.name.Equals(name))
+            {
+                worldLabels.Remove(label);
+                Destroy(label);
+                return;
+            }
+        }
+        Debug.LogWarning("[HololensAvatarLogic:CmdDestroyWorldLabel] didn't find label to destroy");
     }
 
     public delegate void StateListCallback(string[] states);
@@ -101,6 +142,7 @@ public class HololensAvatarLogic : NetworkBehaviour {
 #if UNITY_WSA_10_0
         if (isLocalPlayer)
         {
+            myAvatar = this;
             HMD = transform.Find("HMD");
 
             InitCalibrationAnchor();
@@ -148,8 +190,18 @@ public class HololensAvatarLogic : NetworkBehaviour {
     {
         foreach(GameObject goAnchor in HololensLogic.Instance.getAnchors())
         {
-
+            CmdCreateWorldLabel(goAnchor.name);
         }
+    }
+
+    public void CreateWorldLabel(string name)
+    {
+        CmdCreateWorldLabel(name);
+    }
+
+    public void DestroyWorldLabel(string name)
+    {
+        CmdDestroyWorldLabel(name);
     }
 
     private void InitCalibrationAnchor()

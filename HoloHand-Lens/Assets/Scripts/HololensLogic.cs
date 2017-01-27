@@ -46,9 +46,13 @@ public class HololensLogic : MonoBehaviour {
         }
         else
         {
-            Debug.LogWarning("[HololensAvatarLogic:Start] WorldAnchorManager.Instance is null");
+            Debug.LogWarning("[HololensLogic:Start] WorldAnchorManager.Instance is null");
         }
 #endif
+        if (HololensAvatarLogic.myAvatar != null)
+        {
+            HololensAvatarLogic.myAvatar.CreateWorldLabel(name);
+        }
     }
 
     //remove the last anchor
@@ -58,6 +62,7 @@ public class HololensLogic : MonoBehaviour {
         {
             int removeIndex = anchors.Count - 1;
             GameObject goAnchor = anchors[removeIndex];
+            string removeName = goAnchor.name;
             anchors.RemoveAt(removeIndex);
 #if !UNITY_EDITOR
             if (WorldAnchorManager.Instance != null)
@@ -66,6 +71,10 @@ public class HololensLogic : MonoBehaviour {
             }
 #endif
             GameObject.Destroy(goAnchor);
+            if (HololensAvatarLogic.myAvatar != null)
+            {
+                HololensAvatarLogic.myAvatar.DestroyWorldLabel(removeName);
+            }
         }
     }
 
