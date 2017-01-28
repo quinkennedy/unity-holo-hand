@@ -6,12 +6,23 @@ using UnityEngine.Networking;
 public class WorldLabelLogic : NetworkBehaviour {
 
     GameObject linkedAnchor;
+    public Transform model;
     [SyncVar]
     public string anchorName;
+    [SyncVar]
+    public NetworkInstanceId ownerNetId;
 
     // Use this for initialization
     void Start () {
-		
+        //if this is a World Label from a remote client
+        // child it to that Hololenses wrapper so it maintains the correct relative position
+        if (!hasAuthority && isClient)
+        {
+            Debug.Log("[WorldLabelLogic:Start] ownerNetId: " + ownerNetId);
+            Transform owner = ClientScene.FindLocalObject(ownerNetId).transform;
+            Debug.Log("[WorldLabelLogic:Start] owned by " + owner.GetComponent<HololensAvatarLogic>().ID);
+            transform.SetParent(owner.parent, false);
+        }
 	}
 
 #if UNITY_WSA_10_0
@@ -37,8 +48,11 @@ public class WorldLabelLogic : NetworkBehaviour {
     void Update () {
         if (hasAuthority && linkedAnchor != null)
         {
-            transform.position = linkedAnchor.transform.position;
-            transform.rotation = linkedAnchor.transform.rotation;
+            model.position = linkedAnchor.transform.position;
+            model.rotation = linkedAnchor.transform.rotation;
+        } else
+        {
+            //Debug.Log("[WorldLabelLogic:Update] " + anchorName + " on " + ownerNetId + " at " + transform.localPosition + "=>" + transform.position);
         }
 	}
 }

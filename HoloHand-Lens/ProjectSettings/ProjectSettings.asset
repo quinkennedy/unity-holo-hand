@@ -391,7 +391,7 @@ PlayerSettings:
   m_RenderingPath: 1
   m_MobileRenderingPath: 1
   metroPackageName: HoloHand-Lens
-  metroPackageVersion: 1.0.0.0
+  metroPackageVersion: 1.0.0.5
   metroCertificatePath: Assets\WSATestCertificate.pfx
   metroCertificatePassword: 
   metroCertificateSubject: DefaultCompany
@@ -399,7 +399,7 @@ PlayerSettings:
   metroCertificateNotAfter: 80f2b1f67391d301
   metroApplicationDescription: HoloHand-Lens
   wsaImages:
-    2228374: Assets/Images/logosi-HoloHand-Lens.png
+    2228374: 
   metroTileShortName: HoloHand-Lens
   metroCommandLineArgsFile: 
   metroTileShowName: 0

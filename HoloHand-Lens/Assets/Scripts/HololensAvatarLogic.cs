@@ -96,6 +96,7 @@ public class HololensAvatarLogic : NetworkBehaviour {
         GameObject goWorldLabel = (GameObject)Instantiate(toCreate.gameObject);
         WorldLabelLogic worldLabel = goWorldLabel.GetComponent<WorldLabelLogic>();
         worldLabel.anchorName = name;
+        worldLabel.ownerNetId = netId;
         NetworkServer.SpawnWithClientAuthority(goWorldLabel, connectionToClient);
 
         if (worldLabels == null)
@@ -138,7 +139,7 @@ public class HololensAvatarLogic : NetworkBehaviour {
     // Use this for initialization
     void Start()
     {
-        Debug.Log("[HololensAvatarLogic:Start] ID: " + ID + " IP: " + IP);
+        Debug.Log("[HololensAvatarLogic:Start] ID: " + ID + " IP: " + IP + " netId: " + netId);
         //TODO: use inspector to set these
         CalibrationPlane = transform.Find("KinectCalibrationPlane");
         CalibrationModel = CalibrationPlane.Find("Model").gameObject;
@@ -190,6 +191,7 @@ public class HololensAvatarLogic : NetworkBehaviour {
         } else
         {
             PlaceRelativeTo(MyCalibration);
+            //Debug.Log("[HololensAvatarLogic:Update] pos: " + transform.localPosition + " hmd: " + transform.Find("HMD").localPosition);
         }
     }
 

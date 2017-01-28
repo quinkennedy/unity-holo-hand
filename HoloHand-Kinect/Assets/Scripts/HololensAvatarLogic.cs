@@ -96,6 +96,7 @@ public class HololensAvatarLogic : NetworkBehaviour {
         GameObject goWorldLabel = (GameObject)Instantiate(toCreate.gameObject);
         WorldLabelLogic worldLabel = goWorldLabel.GetComponent<WorldLabelLogic>();
         worldLabel.anchorName = name;
+        worldLabel.ownerNetId = netId;
         NetworkServer.SpawnWithClientAuthority(goWorldLabel, connectionToClient);
 
         if (worldLabels == null)
